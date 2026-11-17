@@ -80,7 +80,7 @@ function paintItem(it) {
   const done = new Set(it.done || []);
   const gcal = (e) => {
     const start = e.date.replace(/-/g, ""); const end = new Date(e.date + "T12:00:00"); end.setDate(end.getDate() + 1);
-    return "https://calendar.google.com/calendar/render?" + new URLSearchParams({ action: "TEMPLATE", text: `${KIND_ICON[e.kind] || ""} ${e.title}`, dates: `${start}/${end.toISOString().slice(0, 10).replace(/-/g, "")}`, details: [e.time, e.url, e.verified ? "" : "Date found by Grok — confirm on the official page.", "— Bulldog Reach"].filter(Boolean).join("\n") });
+    return "https://calendar.google.com/calendar/render?" + new URLSearchParams({ action: "TEMPLATE", text: `${KIND_ICON[e.kind] || ""} ${e.title}`, dates: `${start}/${end.toISOString().slice(0, 10).replace(/-/g, "")}`, details: [e.time, e.url, e.verified ? "" : "Date found by Claude — confirm on the official page.", "— Bulldog Reach"].filter(Boolean).join("\n") });
   };
   const events = [
     ...(it.opp.deadline ? [{ title: `Apply: ${it.opp.title}`, kind: "deadline", date: it.opp.deadline, url: it.opp.url, verified: true }] : []),
@@ -94,7 +94,7 @@ function paintItem(it) {
       ${it.opp.url ? `<a class="glassbtn smallbtn" href="${esc(it.opp.url)}" target="_blank" rel="noopener">Official page ↗</a>` : ""}
       <button class="calbtn" onclick="openTailor('${it.id}')">✨ Tailor my resume</button>
     </div>
-    ${!D ? `<p class="loading"><i></i>Grok is researching deadlines, info sessions and a checklist…</p>` : D.error ? `<p class="err">${esc(D.error)}</p>` : `
+    ${!D ? `<p class="loading"><i></i>Claude is researching deadlines, info sessions and a checklist…</p>` : D.error ? `<p class="err">${esc(D.error)}</p>` : `
     <p class="lede" style="font-size:16px;margin:18px 0 6px">${esc(D.summary)}</p>
     ${D.eligibility ? `<p class="why">Eligibility: ${esc(D.eligibility)}</p>` : ""}
     <h3 class="dh">Dates</h3>
