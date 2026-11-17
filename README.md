@@ -20,6 +20,16 @@ Built in about 2 hours at the **y/cs × SpaceXSI Grokathon**, Yale, November 17,
 ![Game plan](docs/plan.jpg)
 ![People ranked](docs/people.jpg)
 
+## Beta features (v2)
+
+- **Onboarding:** upload your resume (PDF or Word) and, optionally, LinkedIn's "Save to PDF" export of your profile. Grok turns them into a structured resume you can edit.
+- **My list (the "cart"):** swipe right to save an opportunity. Grok then researches its deadlines, info sessions, and office hours, builds an application checklist and draft messages, and ranks your list by urgency.
+- **Calendar sync:** a private subscription feed. Subscribe once in Google, Apple, or Outlook Calendar, and every date for opportunities on your list appears automatically.
+- **Resume tailoring:** for each opportunity, Grok **suggests** edits (wording, order, keywords, where a number would help). Nothing changes until you accept a suggestion. Grok never invents numbers: it leaves `[X%]` placeholders for you to fill in, and flags any new wording that isn't in your resume. Export to **Word (.docx)** or **PDF**.
+- **Yale-only beta:** @yale.edu email sign-in, saved plans, an outreach tracker, and daily usage limits (Supabase).
+
+See [docs/PRD.md](docs/PRD.md) for the product spec and [docs/SOURCES.md](docs/SOURCES.md) for which Yale data sources we can use.
+
 ## Why
 
 Yale gives you the network, but nothing helps you use it. LinkedIn tells you who exists. Bulldog Reach tells you **who can actually move your goal forward, what to ask them, and what to say**, using what they posted this week.
