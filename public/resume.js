@@ -67,7 +67,7 @@ async function submitOnboarding(e) {
   $("#onbbtn").disabled = true; $("#onbbtn").textContent = "Reading your files…";
   try {
     const [resume_text, linkedin_text] = await Promise.all([extractText(rf), extractText(lf)]);
-    $("#onbbtn").textContent = "Grok is structuring your resume…";
+    $("#onbbtn").textContent = "Claude is structuring your resume…";
     const { resume } = await call("/api/resume/parse", { body: { resume_text, linkedin_text, linkedin_url: $("#lurl").value.trim(), source_names: [rf?.name, lf?.name].filter(Boolean) } });
     RS.resume = resume;
     paintOnboarding();
@@ -99,7 +99,7 @@ async function openTailor(cartId) {
   paintWorkspace();
 }
 async function generateSuggestions() {
-  $("#rwside").innerHTML = `<p class="loading"><i></i>Grok is reading the opportunity and your resume… (~15s)</p>`;
+  $("#rwside").innerHTML = `<p class="loading"><i></i>Claude is reading the opportunity and your resume… (~15s)</p>`;
   try {
     const { tailored } = await call("/api/tailor/" + RS.cartId, {});
     RS.tailored = tailored; RS.doc = structuredClone(tailored.resume);
@@ -119,14 +119,14 @@ function paintSide() {
   const side = $("#rwside");
   if (RS.mode === "base") {
     side.innerHTML = `<div class="k">Base resume</div>
-      <p class="why" style="font-size:14px">This is what Grok read from your files. <b style="color:#fff">Check every line</b> — click any text to edit it. Changes save automatically.</p>
+      <p class="why" style="font-size:14px">This is what Claude read from your files. <b style="color:#fff">Check every line</b> — click any text to edit it. Changes save automatically.</p>
       <p class="why" style="font-size:14px">To tailor it, open an opportunity on your list and press “✨ Tailor my resume”. Your base resume never changes from tailoring.</p>
       <button class="linkbtn" onclick="$('#rw').hidden=true;$('#onboard').hidden=false;localStorage.removeItem('bb_skip_onboard');$('#onboard').scrollIntoView()">Re-upload files</button>`;
     return;
   }
   const T = RS.tailored;
   if (!T?.suggestions?.length) {
-    side.innerHTML = `<div class="k">Tailoring</div><p class="why" style="font-size:14px">Grok will suggest edits for this opportunity: wording, order, keywords, and where a number would help. <b style="color:#fff">Nothing changes until you accept it.</b></p>
+    side.innerHTML = `<div class="k">Tailoring</div><p class="why" style="font-size:14px">Claude will suggest edits for this opportunity: wording, order, keywords, and where a number would help. <b style="color:#fff">Nothing changes until you accept it.</b></p>
       <button class="cta" style="width:auto;height:52px;padding:0 22px;font-size:16px;border-radius:14px" onclick="generateSuggestions()">Suggest edits →</button>`;
     return;
   }
