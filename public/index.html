@@ -154,6 +154,7 @@
   .authbox h3{font-size:30px;letter-spacing:-.02em;margin:0 0 8px}
   .authform{display:flex;gap:12px;flex-wrap:wrap}
   .authform input{flex:1;min-width:240px;height:64px;padding:0 22px;border-radius:18px;background:rgba(0,0,0,.25);border:1px solid var(--stroke);font-size:19px}
+  .authform .otp{flex:0 1 260px;min-width:200px;font:700 30px/1 Inter;letter-spacing:.35em;text-align:center}
   .authform .cta{width:auto;height:64px;padding:0 26px;font-size:19px;border-radius:18px}
   .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);z-index:50;display:flex;justify-content:flex-end}
   .modal[hidden]{display:none}
@@ -328,11 +329,13 @@
     <div id="authbox" class="authbox" hidden>
       <div class="k">Beta · Yale only</div>
       <h3>Sign in with your Yale email</h3>
-      <p class="why" style="font-size:15px;margin:0 0 18px">We’ll email you a one-time sign-in link. No password. Your plans save automatically.</p>
-      <form id="authform" class="authform">
-        <input id="email" type="email" placeholder="you@yale.edu" autocomplete="email" required />
-        <button class="cta" id="authbtn">Email me a link →</button>
-      </form>
+      <p class="why" style="font-size:15px;margin:0 0 18px">We’ll email you a 6-digit code. No password. Your list, plans and resumes save to your account.</p>
+      <div id="authstep">
+        <form id="authform" class="authform" onsubmit="sendCode(event)">
+          <input id="email" type="email" placeholder="you@yale.edu" autocomplete="email" required />
+          <button class="cta" id="authbtn">Send my code →</button>
+        </form>
+      </div>
       <div id="autherr" class="err" style="margin-top:10px"></div>
     </div>
     <form id="onboard" class="onboard" hidden onsubmit="submitOnboarding(event)">
@@ -448,14 +451,25 @@ async function boot() {
   const el = $("#status");
   el.innerHTML = `<i></i>${cfg.demo ? "demo mode" : "Grok live"}`;
   if (!cfg.demo) el.classList.add("live");
-  AUTH.on = cfg.auth; AUTH.domain = cfg.domain; AUTH.limits = cfg.limits || {};
+  AUTH.on = cfg.auth; AUTH.emailCode = !!cfg.emailCode; AUTH.domain = cfg.domain; AUTH.limits = cfg.limits || {};
   if (!AUTH.on) return paintAuth();
   const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
   AUTH.sb = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, { auth: { persistSession: true, detectSessionInUrl: true, flowType: "implicit" } });
+  AUTH.sb.auth.onAuthStateChange((_e, session) => { AUTH.session = session; paintAuth(); });
+  // Email button lands on /auth/confirm?token_hash=…&type=email — verify it here and sign in, in ANY browser.
+  const q = new URLSearchParams(location.search);
+  if (location.pathname === "/auth/confirm" && q.get("token_hash")) {
+    $("#authbox").hidden = false; $("#f").hidden = true;
+    $("#authstep").innerHTML = `<p class="loading" style="padding:0"><i></i>Signing you in…</p>`;
+    $("#build").scrollIntoView();
+    const { error } = await AUTH.sb.auth.verifyOtp({ token_hash: q.get("token_hash"), type: q.get("type") || "email" });
+    history.replaceState(null, "", "/");
+    if (error) showEmailStep(`That link expired or was already used (${error.message}). Enter your email to get a new one.`);
+  }
   const { data } = await AUTH.sb.auth.getSession();
   AUTH.session = data.session;
-  AUTH.sb.auth.onAuthStateChange((_e, session) => { AUTH.session = session; paintAuth(); });
   paintAuth();
+  if (location.pathname === "/auth/confirm" || location.hash.includes("access_token")) history.replaceState(null, "", "/");
 }
 window.addEventListener("DOMContentLoaded", boot);
 
@@ -471,20 +485,62 @@ function paintAuth() {
   if (signedIn) { loadCart(); loadResume(); }
 }
 
-$("#authform").onsubmit = async (e) => {
+// Step 1: email → Supabase sends our branded email with a 6-digit code + a sign-in button.
+function showEmailStep(msg) {
+  $("#authstep").innerHTML = `
+    <form id="authform" class="authform" onsubmit="sendCode(event)">
+      <input id="email" type="email" placeholder="you@yale.edu" autocomplete="email" required value="${esc(AUTH.pendingEmail || "")}" />
+      <button class="cta" id="authbtn">Send my code →</button>
+    </form>`;
+  $("#autherr").textContent = msg || "";
+}
+async function sendCode(e) {
   e.preventDefault();
   const email = $("#email").value.trim().toLowerCase();
-  if (!email.endsWith("@" + AUTH.domain) && !email.endsWith("." + AUTH.domain)) {
-    $("#autherr").textContent = `Use your @${AUTH.domain} email.`;
+  if (!email.endsWith("@" + AUTH.domain) && !email.endsWith("." + AUTH.domain)) return ($("#autherr").textContent = `Use your @${AUTH.domain} email.`);
+  $("#autherr").textContent = "";
+  $("#authbtn").disabled = true; $("#authbtn").textContent = "Sending…";
+  const { error } = await AUTH.sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: location.origin + "/auth/confirm" } });
+  if (error) { $("#authbtn").disabled = false; $("#authbtn").textContent = "Send my code →"; return ($("#autherr").textContent = /rate|seconds/i.test(error.message) ? "Too many emails just now — wait a minute and try again." : error.message); }
+  AUTH.pendingEmail = email;
+  showCodeStep();
+}
+// Step 2: type the code from the email → signed in right here (no tab switching).
+function showCodeStep() {
+  if (!AUTH.emailCode) {
+    // Default Supabase email = link only. Opening it (any tab on this computer) signs this tab in too.
+    $("#authstep").innerHTML = `
+      <p class="lede" style="font-size:16px;margin:0 0 6px">📬 We emailed a sign-in link to <b style="color:#fff">${esc(AUTH.pendingEmail)}</b>.</p>
+      <p class="loading" style="padding:6px 0 0"><i></i>Open it on this computer — this page signs you in automatically.</p>
+      <div class="row3" style="margin-top:12px"><button class="linkbtn" style="font-size:14px" onclick="showEmailStep()">Use a different email</button><button class="linkbtn" style="font-size:14px" onclick="resendCode(this)">Resend email</button></div>`;
     return;
   }
+  $("#authstep").innerHTML = `
+    <p class="lede" style="font-size:16px;margin:0 0 14px">We emailed a code to <b style="color:#fff">${esc(AUTH.pendingEmail)}</b>. Type it here — or tap “Sign in” in the email.</p>
+    <form class="authform" onsubmit="verifyCode(event)">
+      <input id="otp" class="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="••••••" required />
+      <button class="cta" id="otpbtn">Sign in →</button>
+    </form>
+    <div class="row3" style="margin-top:12px"><button class="linkbtn" style="font-size:14px" onclick="showEmailStep()">Use a different email</button><button class="linkbtn" style="font-size:14px" onclick="resendCode(this)">Resend code</button></div>`;
+  $("#otp").focus();
+  $("#otp").oninput = (e) => { e.target.value = e.target.value.replace(/\D/g, ""); if (e.target.value.length >= 6 && e.target.value.length === (AUTH.codeLen || 6)) e.target.form.requestSubmit(); };
+}
+async function verifyCode(e) {
+  e.preventDefault();
+  const token = $("#otp").value.replace(/\D/g, "");
+  $("#otpbtn").disabled = true; $("#otpbtn").textContent = "Checking…";
+  const { error } = await AUTH.sb.auth.verifyOtp({ email: AUTH.pendingEmail, token, type: "email" });
+  if (error) { $("#otpbtn").disabled = false; $("#otpbtn").textContent = "Sign in →"; $("#autherr").textContent = "That code didn't work — check the newest email, or resend."; return; }
   $("#autherr").textContent = "";
-  $("#authbtn").disabled = true;
-  const { error } = await AUTH.sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + "/" } });
-  $("#authbtn").disabled = false;
-  if (error) return ($("#autherr").textContent = error.message);
-  $("#authform").innerHTML = `<p class="lede" style="margin:0">✉️ Check <b style="color:#fff">${esc(email)}</b> for a sign-in link. Open it on this device.</p>`;
-};
+  toast("You're in. Welcome to Bulldog Reach 👋");
+}
+async function resendCode(btn) {
+  btn.disabled = true;
+  const { error } = await AUTH.sb.auth.signInWithOtp({ email: AUTH.pendingEmail, options: { shouldCreateUser: true, emailRedirectTo: location.origin + "/auth/confirm" } });
+  $("#autherr").textContent = error ? (/rate|seconds/i.test(error.message) ? "Wait a minute before resending." : error.message) : "";
+  if (!error) toast("New code sent");
+  setTimeout(() => (btn.disabled = false), 30000);
+}
 async function signOut() { await AUTH.sb.auth.signOut(); location.reload(); }
 
 document.querySelectorAll(".chip").forEach((c) => (c.onclick = () => ($("#goal").value = c.textContent)));

@@ -387,7 +387,7 @@ http
     const url = req.url.split("?")[0];
     try {
       if (url === "/api/config" || url === "/api/status") {
-        return send(res, 200, { demo: DEMO, model: MODEL, auth: AUTH, domain: DOMAIN, limits: LIMITS, supabaseUrl: AUTH ? SB_URL : null, supabaseAnonKey: AUTH ? SB_ANON : null });
+        return send(res, 200, { demo: DEMO, model: MODEL, emailCode: process.env.AUTH_EMAIL_CODE === "1", auth: AUTH, domain: DOMAIN, limits: LIMITS, supabaseUrl: AUTH ? SB_URL : null, supabaseAnonKey: AUTH ? SB_ANON : null });
       }
       if (req.method === "POST" && url === "/api/plan") {
         const user = await guard(req);
@@ -560,7 +560,7 @@ http
       if (!(e instanceof HttpError)) console.error(e);
       return send(res, e.status && e.status < 600 ? e.status : 500, { error: e.message });
     }
-    const file = path.join(__dirname, "public", url === "/" ? "index.html" : url);
+    const file = path.join(__dirname, "public", url === "/" || url === "/auth/confirm" ? "index.html" : url);
     if (!file.startsWith(path.join(__dirname, "public")) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
       res.writeHead(404);
       return res.end("not found");
