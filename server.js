@@ -148,39 +148,148 @@ function demoPlan(goal) {
   };
 }
 
+// ---------------- beta: auth, limits, persistence (Supabase) ----------------
+// Enabled when SUPABASE_URL + SUPABASE_ANON_KEY + SUPABASE_SERVICE_KEY are set.
+// Without them the app runs open (local/dev) with an in-memory per-IP limit.
+const SB_URL = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
+const SB_ANON = process.env.SUPABASE_ANON_KEY || "";
+const SB_SERVICE = process.env.SUPABASE_SERVICE_KEY || "";
+const AUTH = !!(SB_URL && SB_ANON && SB_SERVICE);
+const DOMAIN = (process.env.ALLOWED_DOMAIN || "yale.edu").toLowerCase();
+const LIMITS = { plan: +process.env.DAILY_PLAN_LIMIT || 10, deck: +process.env.DAILY_DECK_LIMIT || 15 };
+const MONTHLY_CAP = +process.env.MONTHLY_CALL_CAP || 3000; // total Grok calls across all users per month
+const STATUSES = ["todo", "sent", "replied", "meeting", "referred", "no_reply"];
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+class HttpError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
+
+const userCache = new Map();
+async function getUser(req) {
+  const tok = (req.headers.authorization || "").replace(/^Bearer\s+/i, "").trim();
+  if (!tok) return null;
+  const hit = userCache.get(tok);
+  if (hit && hit.exp > Date.now()) return hit.user;
+  const r = await fetch(`${SB_URL}/auth/v1/user`, { headers: { apikey: SB_ANON, Authorization: `Bearer ${tok}` } });
+  if (!r.ok) return null;
+  const u = await r.json();
+  const user = { id: u.id, email: String(u.email || "").toLowerCase() };
+  userCache.set(tok, { user, exp: Date.now() + 5 * 60e3 });
+  return user;
+}
+const domainOk = (email) => email.endsWith("@" + DOMAIN) || email.endsWith("." + DOMAIN);
+
+async function sb(pathq, { method = "GET", body, prefer } = {}) {
+  const r = await fetch(`${SB_URL}/rest/v1/${pathq}`, {
+    method,
+    headers: { apikey: SB_SERVICE, Authorization: `Bearer ${SB_SERVICE}`, "Content-Type": "application/json", ...(prefer ? { Prefer: prefer } : {}) },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const t = await r.text();
+  if (!r.ok) throw new HttpError(500, `Database error (${r.status}): ${t.slice(0, 200)}`);
+  return t ? JSON.parse(t) : null;
+}
+
+// Local fallback limiter (no Supabase): per IP, per day, in memory.
+const memUsage = new Map();
+async function bump(user, kind) {
+  if (!AUTH) {
+    const k = `${user.id}|${today()}|${kind}`;
+    const n = (memUsage.get(k) || 0) + 1;
+    if (n > LIMITS[kind]) throw new HttpError(429, `Daily limit reached (${LIMITS[kind]} ${kind}s). Try again tomorrow.`);
+    memUsage.set(k, n);
+    return { used: n, limit: LIMITS[kind] };
+  }
+  const out = await sb("rpc/bump_usage", { method: "POST", body: { p_user: user.id, p_kind: kind, p_limit: LIMITS[kind], p_monthly_cap: MONTHLY_CAP } });
+  if (out === -1) throw new HttpError(429, `You've used all ${LIMITS[kind]} ${kind === "plan" ? "game plans" : "opportunity decks"} for today. Resets at midnight UTC.`);
+  if (out === -2) throw new HttpError(429, "Bulldog Reach hit its monthly capacity. We'll be back soon.");
+  return { used: out, limit: LIMITS[kind] };
+}
+
+async function guard(req) {
+  if (!AUTH) return { id: "ip:" + (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "?").split(",")[0].trim(), email: null };
+  const user = await getUser(req);
+  if (!user) throw new HttpError(401, "Please sign in with your Yale email.");
+  if (!domainOk(user.email)) throw new HttpError(403, `Bulldog Reach is only open to @${DOMAIN} accounts for now.`);
+  return user;
+}
+
 function send(res, code, obj) {
-  res.writeHead(code, { "Content-Type": "application/json" });
+  res.writeHead(code, { "Content-Type": "application/json", "Cache-Control": "no-store" });
   res.end(JSON.stringify(obj));
 }
 function readBody(req) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     let body = "";
-    req.on("data", (c) => (body += c));
+    req.on("data", (c) => {
+      body += c;
+      if (body.length > 200e3) { reject(new HttpError(413, "Request too large")); req.destroy(); }
+    });
     req.on("end", () => { try { resolve(JSON.parse(body || "{}")); } catch { resolve({}); } });
   });
 }
+const clip = (s, n) => String(s || "").slice(0, n);
 
 http
   .createServer(async (req, res) => {
     const url = req.url.split("?")[0];
     try {
+      if (url === "/api/config" || url === "/api/status") {
+        return send(res, 200, { demo: DEMO, model: MODEL, auth: AUTH, domain: DOMAIN, limits: LIMITS, supabaseUrl: AUTH ? SB_URL : null, supabaseAnonKey: AUTH ? SB_ANON : null });
+      }
       if (req.method === "POST" && url === "/api/plan") {
+        const user = await guard(req);
         const b = await readBody(req);
         if (!b.goal) return send(res, 400, { error: "Tell us your goal first." });
-        if (DEMO) return setTimeout(() => send(res, 200, demoPlan(b.goal)), 900);
-        return send(res, 200, await grokJSON(PLAN_SYSTEM, planPrompt(b), "Use x_search and web_search to find real, recent posts for hooks. Hook sources should include the post URL when you have one."));
+        const input = { goal: clip(b.goal, 300), about: clip(b.about, 1500), profiles: clip(b.profiles, 12000), liked: (Array.isArray(b.liked) ? b.liked : []).slice(0, 12) };
+        const usage = await bump(user, "plan");
+        const plan = DEMO ? demoPlan(input.goal) : await grokJSON(PLAN_SYSTEM, planPrompt(input), "Use x_search and web_search to find real, recent posts for hooks. Hook sources should include the post URL when you have one.");
+        if (AUTH) {
+          const [row] = await sb("plans", { method: "POST", prefer: "return=representation", body: { user_id: user.id, goal: input.goal, liked: input.liked, data: plan } });
+          plan._id = row.id;
+        }
+        plan._usage = usage;
+        return send(res, 200, plan);
       }
       if (req.method === "POST" && url === "/api/opportunities") {
+        const user = await guard(req);
         const b = await readBody(req);
         if (!b.goal) return send(res, 400, { error: "Tell us your goal first." });
-        if (DEMO) return setTimeout(() => send(res, 200, demoOpps()), 700);
-        const user = `GOAL: ${b.goal}\n\nABOUT ME: ${b.about || "(not given)"}\n\nALREADY SEEN (don't repeat): ${(b.seen || []).join("; ") || "(none)"}`;
-        return send(res, 200, await grokJSON(OPPS_SYSTEM, user, "Use web_search (and x_search for fresh hiring posts) to find real openings with real URLs and deadlines."));
+        const usage = await bump(user, "deck");
+        if (DEMO) return send(res, 200, { ...demoOpps(), _usage: usage });
+        const prompt = `GOAL: ${clip(b.goal, 300)}\n\nABOUT ME: ${clip(b.about, 1500) || "(not given)"}\n\nALREADY SEEN (don't repeat): ${(Array.isArray(b.seen) ? b.seen : []).slice(0, 40).map((s) => clip(s, 120)).join("; ") || "(none)"}`;
+        const d = await grokJSON(OPPS_SYSTEM, prompt, "Use web_search (and x_search for fresh hiring posts) to find real openings with real URLs and deadlines.");
+        d._usage = usage;
+        return send(res, 200, d);
       }
-      if (url === "/api/status") return send(res, 200, { demo: DEMO, model: MODEL });
+      // --- saved plans + outreach tracker (beta, needs Supabase) ---
+      if (url === "/api/plans" && req.method === "GET") {
+        const user = await guard(req);
+        if (!AUTH) return send(res, 200, { plans: [] });
+        const rows = await sb(`plans?select=id,goal,created_at,north_star:data->>north_star&user_id=eq.${user.id}&order=created_at.desc&limit=30`);
+        return send(res, 200, { plans: rows });
+      }
+      const m = url.match(/^\/api\/plans\/([^/]+)$/);
+      if (m && req.method === "GET") {
+        const user = await guard(req);
+        if (!AUTH || !UUID.test(m[1])) return send(res, 404, { error: "Not found" });
+        const [row] = await sb(`plans?select=id,goal,liked,data,created_at&id=eq.${m[1]}&user_id=eq.${user.id}`);
+        if (!row) return send(res, 404, { error: "Not found" });
+        const outreach = await sb(`outreach?select=person,status,updated_at&plan_id=eq.${row.id}`);
+        return send(res, 200, { ...row, outreach });
+      }
+      if (url === "/api/outreach" && req.method === "POST") {
+        const user = await guard(req);
+        const b = await readBody(req);
+        if (!AUTH) return send(res, 200, { ok: true, local: true });
+        if (!UUID.test(b.plan_id || "") || !STATUSES.includes(b.status) || !b.person) return send(res, 400, { error: "Bad request" });
+        const [own] = await sb(`plans?select=id&id=eq.${b.plan_id}&user_id=eq.${user.id}`);
+        if (!own) return send(res, 404, { error: "Not found" });
+        await sb("outreach?on_conflict=plan_id,person", { method: "POST", prefer: "resolution=merge-duplicates", body: { user_id: user.id, plan_id: b.plan_id, person: clip(b.person, 200), status: b.status, updated_at: new Date().toISOString() } });
+        return send(res, 200, { ok: true });
+      }
     } catch (e) {
-      console.error(e);
-      return send(res, 500, { error: e.message });
+      if (!(e instanceof HttpError)) console.error(e);
+      return send(res, e.status && e.status < 600 ? e.status : 500, { error: e.message });
     }
     const file = path.join(__dirname, "public", url === "/" ? "index.html" : url);
     if (!file.startsWith(path.join(__dirname, "public")) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
@@ -191,4 +300,4 @@ http
     res.writeHead(200, { "Content-Type": types[path.extname(file)] || "application/octet-stream" });
     fs.createReadStream(file).pipe(res);
   })
-  .listen(PORT, () => console.log(`Bulldog Reach on http://localhost:${PORT}  (${DEMO ? "DEMO mode — add XAI_API_KEY to .env" : "model " + MODEL})`));
+  .listen(PORT, () => console.log(`Bulldog Reach on http://localhost:${PORT}  (${DEMO ? "DEMO mode — add XAI_API_KEY to .env" : "model " + MODEL} · ${AUTH ? "Yale login ON" : "open mode, no login"})`));

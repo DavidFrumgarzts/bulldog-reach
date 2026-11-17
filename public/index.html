@@ -145,6 +145,32 @@
   .sl a{font-size:14px;font-weight:600;color:#fff}
   .allcal{display:flex;align-items:center;gap:14px}
   @media(max-width:1100px){.deckgrid{grid-template-columns:1fr}.stack{width:340px;height:500px}}
+  /* BETA: auth, history, tracker */
+  .usage{font-size:13px;font-weight:600;color:rgba(255,255,255,.55)}
+  .me{display:flex;align-items:center;gap:12px}
+  .mebtn{height:44px;padding:0 18px;border-radius:99px;font-weight:600;font-size:14px;display:inline-flex;align-items:center}
+  .meemail{font-size:13px;color:rgba(255,255,255,.6);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .authbox{margin-top:28px;padding:32px;border-radius:28px;background:var(--glass);border:1px solid var(--stroke);max-width:720px}
+  .authbox h3{font-size:30px;letter-spacing:-.02em;margin:0 0 8px}
+  .authform{display:flex;gap:12px;flex-wrap:wrap}
+  .authform input{flex:1;min-width:240px;height:64px;padding:0 22px;border-radius:18px;background:rgba(0,0,0,.25);border:1px solid var(--stroke);font-size:19px}
+  .authform .cta{width:auto;height:64px;padding:0 26px;font-size:19px;border-radius:18px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);z-index:50;display:flex;justify-content:flex-end}
+  .modal[hidden]{display:none}
+  .sheet{width:min(520px,100%);height:100%;overflow:auto;background:#160C06;border-left:1px solid var(--stroke);padding:32px}
+  .sheethead{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+  .histlist{display:flex;flex-direction:column;gap:10px}
+  .hrow{text-align:left;display:flex;flex-direction:column;gap:4px;padding:16px 18px;border-radius:18px;background:var(--glass);border:1px solid var(--stroke);color:#fff}
+  .hrow:hover{background:rgba(255,255,255,.12)}
+  .hrow span{font-size:14px;color:var(--mute)}.hrow small{font-size:12px;color:rgba(255,255,255,.4)}
+  .track-sel{height:40px;padding:0 12px;border-radius:99px;font:600 14px Inter;background:rgba(255,255,255,.08);color:#fff;border:1px solid var(--stroke);cursor:pointer}
+  .track-sel option{color:#111}
+  .track-sel.s-sent{background:rgba(10,132,255,.2);border-color:rgba(10,132,255,.45)}
+  .track-sel.s-replied,.track-sel.s-meeting,.track-sel.s-referred{background:rgba(52,199,89,.2);border-color:rgba(52,199,89,.45)}
+  .track-sel.s-no_reply{background:rgba(255,107,91,.15);border-color:rgba(255,107,91,.4)}
+  .tracksum{font-size:14px;font-weight:600;color:rgba(255,255,255,.6)}
+  .foot{padding:28px 0 40px;font-size:13px;color:rgba(255,255,255,.35);background:#0E0806}
+  .foot a{color:rgba(255,255,255,.55)}
   .banner{margin-top:40px;padding:14px 20px;border-radius:16px;background:rgba(255,214,10,.12);color:#FFE27A;font-weight:500;font-size:14px}
   .rtop{display:flex;justify-content:space-between;align-items:center;padding-top:48px}
   .goalpill{display:flex;gap:10px;font-size:15px;font-weight:600;padding:14px 22px;border-radius:99px;background:rgba(255,255,255,.1);border:1px solid var(--stroke)}
@@ -199,7 +225,7 @@
   <div class="wrap">
     <nav>
       <div class="brand"><span class="logo">B_</span><span class="seen">as seen at y/cs × SpaceXSI Grokathon</span></div>
-      <div class="navr"><span id="status" class="status"><i></i>connecting…</span><a href="#build" class="pillbtn whitebtn">Get started</a></div>
+      <div class="navr"><span id="status" class="status"><i></i>connecting…</span><span id="usage" class="usage"></span><span id="me" class="me"></span><a href="#build" class="pillbtn whitebtn">Get started</a></div>
     </nav>
     <div class="herogrid">
       <div>
@@ -231,6 +257,16 @@
   <div class="wrap">
     <div class="k">Step one</div>
     <h2>What are you trying to make happen?</h2>
+    <div id="authbox" class="authbox" hidden>
+      <div class="k">Beta · Yale only</div>
+      <h3>Sign in with your Yale email</h3>
+      <p class="why" style="font-size:15px;margin:0 0 18px">We’ll email you a one-time sign-in link. No password. Your plans save automatically.</p>
+      <form id="authform" class="authform">
+        <input id="email" type="email" placeholder="you@yale.edu" autocomplete="email" required />
+        <button class="cta" id="authbtn">Email me a link →</button>
+      </form>
+      <div id="autherr" class="err" style="margin-top:10px"></div>
+    </div>
     <form id="f" class="formgrid">
       <div class="field goal">
         <label>My goal</label>
@@ -282,6 +318,15 @@
 
 <section id="out"></section>
 
+<div id="history" class="modal" hidden onclick="if(event.target===this)this.hidden=true">
+  <div class="sheet">
+    <div class="sheethead"><h2 style="font-size:32px">My plans</h2><button class="linkbtn" onclick="$('#history').hidden=true">Close</button></div>
+    <div id="histlist" class="histlist"></div>
+  </div>
+</div>
+
+<footer class="foot"><div class="wrap">Bulldog Reach beta · Hooks come from public posts and link to their source. Reply odds are Grok estimates. Want to be excluded from suggestions? Email <a href="mailto:david.frumgarzts@yale.edu">david.frumgarzts@yale.edu</a>.</div></footer>
+
 <script>
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -289,23 +334,106 @@ const oddsColor = (n) => (n >= 65 ? "var(--green)" : n >= 45 ? "var(--yellow)" :
 const initials = (n) => String(n || "?").replace(/\(.*?\)/g, "").replace(/^(Prof\.|Dr\.)\s*/, "").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 let lastPeople = [];
 
-fetch("/api/status").then((r) => r.json()).then((s) => {
+// ---------------- auth (beta) ----------------
+const AUTH = { on: false, sb: null, session: null, domain: "yale.edu", limits: {} };
+const token = () => AUTH.session?.access_token;
+
+(async function boot() {
+  const cfg = await fetch("/api/config").then((r) => r.json());
   const el = $("#status");
-  el.innerHTML = `<i></i>${s.demo ? "demo mode" : "Grok · " + esc(s.model)}`;
-  if (!s.demo) el.classList.add("live");
-});
+  el.innerHTML = `<i></i>${cfg.demo ? "demo mode" : "Grok live"}`;
+  if (!cfg.demo) el.classList.add("live");
+  AUTH.on = cfg.auth; AUTH.domain = cfg.domain; AUTH.limits = cfg.limits || {};
+  if (!AUTH.on) return paintAuth();
+  const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+  AUTH.sb = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, { auth: { persistSession: true, detectSessionInUrl: true, flowType: "implicit" } });
+  const { data } = await AUTH.sb.auth.getSession();
+  AUTH.session = data.session;
+  AUTH.sb.auth.onAuthStateChange((_e, session) => { AUTH.session = session; paintAuth(); });
+  paintAuth();
+})();
+
+function paintAuth() {
+  const signedIn = !AUTH.on || !!AUTH.session;
+  $("#authbox").hidden = signedIn;
+  $("#f").hidden = !signedIn;
+  const email = AUTH.session?.user?.email;
+  $("#me").innerHTML = AUTH.on && email
+    ? `<button class="glassbtn mebtn" onclick="openHistory()">My plans</button><span class="meemail">${esc(email)}</span><button class="linkbtn" style="font-size:14px" onclick="signOut()">Sign out</button>`
+    : AUTH.on ? `<a href="#build" class="glassbtn mebtn" style="text-decoration:none">Sign in</a>` : "";
+  if (AUTH.on && email) loadHistory();
+}
+
+$("#authform").onsubmit = async (e) => {
+  e.preventDefault();
+  const email = $("#email").value.trim().toLowerCase();
+  if (!email.endsWith("@" + AUTH.domain) && !email.endsWith("." + AUTH.domain)) {
+    $("#autherr").textContent = `Use your @${AUTH.domain} email.`;
+    return;
+  }
+  $("#autherr").textContent = "";
+  $("#authbtn").disabled = true;
+  const { error } = await AUTH.sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + "/" } });
+  $("#authbtn").disabled = false;
+  if (error) return ($("#autherr").textContent = error.message);
+  $("#authform").innerHTML = `<p class="lede" style="margin:0">✉️ Check <b style="color:#fff">${esc(email)}</b> for a sign-in link. Open it on this device.</p>`;
+};
+async function signOut() { await AUTH.sb.auth.signOut(); location.reload(); }
 
 document.querySelectorAll(".chip").forEach((c) => (c.onclick = () => ($("#goal").value = c.textContent)));
 $("#about").value = localStorage.bb_about || "";
 
 // ---------------- state ----------------
-const S = { goal: "", deck: [], liked: [], seen: [], plan: null };
-const api = async (path, body) => {
-  const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  const d = await r.json();
-  if (!r.ok) throw new Error(d.error || "Something broke");
+const S = { goal: "", deck: [], liked: [], seen: [], plan: null, outreach: {} };
+async function call(path, { method = "POST", body } = {}) {
+  const headers = { "Content-Type": "application/json" };
+  if (token()) headers.Authorization = "Bearer " + token();
+  const r = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  const d = await r.json().catch(() => ({}));
+  if (r.status === 401 && AUTH.on) { AUTH.session = null; paintAuth(); window.scrollTo({ top: $("#build").offsetTop }); }
+  if (!r.ok) throw Object.assign(new Error(d.error || "Something broke"), { status: r.status });
+  if (d._usage) paintUsage(d._usage);
   return d;
-};
+}
+const api = (path, body) => call(path, { body });
+function paintUsage(u) { $("#usage").textContent = `${u.used}/${u.limit} today`; }
+
+// ---------------- history + tracker ----------------
+async function loadHistory() {
+  try {
+    const { plans } = await call("/api/plans", { method: "GET" });
+    $("#histlist").innerHTML = plans.length
+      ? plans.map((p) => `<button class="hrow" onclick="openPlan('${esc(p.id)}')"><b>${esc(p.goal)}</b><span>${esc(p.north_star || "")}</span><small>${new Date(p.created_at).toLocaleDateString()}</small></button>`).join("")
+      : `<p class="why">No saved plans yet. Your plans save automatically.</p>`;
+  } catch {}
+}
+function openHistory() { $("#history").hidden = false; loadHistory(); }
+async function openPlan(id) {
+  $("#history").hidden = true;
+  try {
+    const row = await call("/api/plans/" + id, { method: "GET" });
+    const d = row.data; d._id = row.id; d._liked = row.liked || [];
+    S.outreach = Object.fromEntries((row.outreach || []).map((o) => [o.person, o.status]));
+    S.goal = row.goal; $("#goal").value = row.goal;
+    render(d, row.goal);
+    window.scrollTo({ top: $("#out").offsetTop - 10 });
+  } catch (e) { alert(e.message); }
+}
+const STATUS_LABELS = { todo: "To send", sent: "Sent", replied: "Replied 🎉", meeting: "Meeting booked", referred: "Referred ⭐", no_reply: "No reply" };
+async function setStatus(person, sel) {
+  S.outreach[person] = sel.value;
+  sel.className = "track-sel s-" + sel.value;
+  paintTracker();
+  if (!S.plan?._id) return; // not saved (local mode) — keep in memory only
+  try { await call("/api/outreach", { body: { plan_id: S.plan._id, person, status: sel.value } }); }
+  catch (e) { sel.title = "Not saved: " + e.message; }
+}
+function paintTracker() {
+  const vals = Object.values(S.outreach);
+  const n = (s) => vals.filter((v) => v === s).length;
+  const el = $("#tracksum");
+  if (el) el.textContent = `${n("sent") + n("replied") + n("meeting") + n("referred")} sent · ${n("replied") + n("meeting") + n("referred")} replied · ${n("meeting")} meetings · ${n("referred")} referrals`;
+}
 const readGoal = () => {
   const goal = $("#goal").value.trim();
   if (!goal) { $("#err").textContent = "Tell us your goal first."; return null; }
@@ -430,6 +558,8 @@ async function buildPlan() {
     const d = await api("/api/plan", { goal, about: $("#about").value, profiles: $("#profiles").value, liked: S.liked });
     stop();
     d._liked = S.liked;
+    S.outreach = {};
+    if (AUTH.on) loadHistory();
     try { localStorage.bb_last = JSON.stringify({ d, goal }); } catch {}
     render(d, goal);
   } catch (err) {
@@ -541,7 +671,7 @@ function render(d, goal, warning) {
         <h3>${esc(s.title)}</h3><p>${esc(s.who)}</p><p>Ask → ${esc(s.ask)}</p>
       </div>`).join("")}
     </div>
-    <div class="sh"><h2>Who to reach, ranked.</h2><small>Sorted by goal fit × reply odds</small></div>
+    <div class="sh"><h2>Who to reach, ranked.</h2><small id="tracksum" class="tracksum">Sorted by goal fit × reply odds</small></div>
     <div class="people">${people.map((p, i) => `
       <div class="pc">
         <div class="hook">
@@ -561,6 +691,9 @@ function render(d, goal, warning) {
           <div class="subj">Subject: ${esc(p.subject)} · Ask: ${esc(p.ask)}</div>
           <div class="msg" id="m${i}">${esc(p.message)}</div>
           <div class="acts">
+            <select class="track-sel s-${esc(S.outreach[p.name] || "todo")}" onchange="setStatus(lastPeople[${i}].name, this)" aria-label="Outreach status">
+              ${Object.entries(STATUS_LABELS).map(([k, v]) => `<option value="${k}" ${(S.outreach[p.name] || "todo") === k ? "selected" : ""}>${v}</option>`).join("")}
+            </select>
             <button class="whitebtn" onclick="copy(${i}, this)">Copy message</button>
             <button class="glassbtn" onclick="openLinkedIn(${i})">Open LinkedIn</button>
             <button class="calbtn" onclick="addCal(${esc(JSON.stringify("fu-" + p.name))}, this)">📅 Follow-up in ${+p.follow_up_days || 5}d</button>
@@ -586,8 +719,9 @@ function render(d, goal, warning) {
       <div class="allcal"><small>${eventsForPlan(d).length} reminders</small><button class="cta" style="width:auto;height:52px;padding:0 22px;font-size:16px;border-radius:14px" onclick="addAllCal()">📅 Add all to calendar (.ics)</button></div>
     </div>
     <div class="week">${(d.this_week || []).map((t) => `<label class="task"><input type="checkbox"><span>${esc(t)}</span></label>`).join("")}</div>
-    <div class="meta">${live ? "Generated by " + esc(d._meta.model) : "Demo data — add XAI_API_KEY to .env for live Grok"}</div>
+    <div class="meta">${live ? "Generated by " + esc(d._meta.model) : "Demo data — add XAI_API_KEY to .env for live Grok"}${d._id ? " · saved to My plans" : ""}</div>
   </div>`;
+  if (Object.keys(S.outreach).length) paintTracker();
 }
 
 function openLinkedIn(i) {
