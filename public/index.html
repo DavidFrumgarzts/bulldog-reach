@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bulldog Reach — get where you're going</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#fff; --mute:rgba(255,255,255,.6); --faint:rgba(255,255,255,.45);
+    --glass:rgba(255,255,255,.07); --glass2:rgba(255,255,255,.12); --stroke:rgba(255,255,255,.14);
+    --blue:#0A84FF; --green:#34C759; --yellow:#FFD60A; --red:#FF6B5B; --amber:#F5C48C;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;color:var(--ink);font:16px/1.5 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;background:#0E0806;min-height:100vh}
+  .wrap{max-width:1440px;margin:0 auto;padding:0 80px}
+  button{font:inherit;cursor:pointer}
+
+  /* HERO */
+  .hero{position:relative;overflow:hidden;min-height:900px;background:radial-gradient(90% 120% at 55% -10%,#C27A35 0%,#5A3014 45%,#140B06 100%)}
+  .glow{position:absolute;border-radius:50%;filter:blur(140px);pointer-events:none}
+  .g1{width:520px;height:520px;right:-60px;top:-120px;background:rgba(242,178,102,.35)}
+  .g2{width:460px;height:460px;left:-160px;top:560px;background:rgba(138,75,30,.45)}
+  .g3{width:300px;height:300px;right:-40px;top:620px;background:rgba(255,217,160,.18)}
+  nav{position:relative;display:flex;align-items:center;justify-content:space-between;padding-top:44px}
+  .brand{display:flex;align-items:center;gap:24px}
+  .logo{font-weight:700;font-size:34px;letter-spacing:-.04em}
+  .seen{font-size:14px;font-weight:500;color:var(--faint)}
+  .navr{display:flex;gap:12px;align-items:center}
+  .glassbtn{background:var(--glass2);border:1px solid rgba(255,255,255,.22);color:#fff;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
+  .whitebtn{background:#fff;color:#111;border:0}
+  .pillbtn{height:60px;padding:0 30px;border-radius:30px;font-weight:600;font-size:17px;display:inline-flex;align-items:center;text-decoration:none}
+  .status{font-size:13px;font-weight:600;padding:8px 14px;border-radius:99px;display:flex;gap:8px;align-items:center;background:rgba(255,255,255,.1);color:var(--mute)}
+  .status i{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+  .status.live{background:rgba(52,199,89,.14);color:#7EE2A0}.status.live i{background:var(--green)}
+
+  .herogrid{position:relative;display:grid;grid-template-columns:1fr 440px;gap:40px;align-items:start;padding-top:96px;padding-bottom:80px}
+  h1{font-weight:700;font-size:112px;line-height:.94;letter-spacing:-.05em;margin:0 0 30px}
+  .lede{font-size:21px;font-weight:500;line-height:1.4;color:rgba(255,255,255,.72);max-width:560px;margin:0 0 30px}
+  .cta{display:inline-flex;align-items:center;justify-content:center;gap:14px;width:440px;height:84px;border-radius:22px;background:#fff;color:#111;border:0;font-weight:600;font-size:28px;text-decoration:none}
+  .cta svg{flex:none}
+  .proof{display:flex;align-items:center;margin-top:30px;font-size:15px;font-weight:500;color:var(--mute)}
+  .proof b{width:30px;height:30px;border-radius:50%;border:2px solid #2A170B;margin-right:-8px}
+  .proof span{margin-left:18px}
+
+  .phone{width:380px;height:780px;border-radius:62px;background:#1A1A1C;border:6px solid #B86B2E;padding:6px;transform:rotate(6deg);margin-top:-40px;box-shadow:0 40px 80px rgba(0,0,0,.55)}
+  .screen{height:100%;border-radius:54px;background:#F2F3F5;padding:20px 14px;display:flex;flex-direction:column;gap:12px;overflow:hidden;color:#111}
+  .sbar{display:flex;justify-content:space-between;padding:0 20px;font-size:15px;font-weight:600}
+  .chead{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:13px;font-weight:600}
+  .chead b{width:52px;height:52px;border-radius:50%;background:#111;color:#fff;display:grid;place-items:center;font-size:20px;letter-spacing:-.04em}
+  .row{display:flex}.row.me{justify-content:flex-end}
+  .bub{max-width:258px;padding:9px 14px;border-radius:20px;font-size:15px;line-height:1.3;background:#E5E5EA}
+  .me .bub{background:var(--blue);color:#fff}
+  .scard{border-radius:24px;padding:16px;color:#fff;background:linear-gradient(180deg,#4A5A44,#141414);display:flex;flex-direction:column;gap:10px;min-height:250px}
+  .scard .t,.hook .t{display:flex;justify-content:space-between;align-items:center}
+  .scard .t b{font-size:16px;letter-spacing:-.04em}
+  .tag{font-size:12px;font-weight:600;padding:4px 10px;border-radius:99px;background:rgba(255,255,255,.18);color:#fff}
+  .scard .by{margin-top:auto;display:flex;justify-content:space-between;font-size:14px;font-weight:600}
+  .scard .by span{font-size:12px;font-weight:400;opacity:.6}
+  q{quotes:"“" "”" "‘" "’"}
+  .scard q{font-size:16px;font-weight:500;line-height:1.3}
+  .ties{display:flex;gap:6px;flex-wrap:wrap}
+  .ties span{font-size:11px;font-weight:600;padding:3px 8px;border-radius:8px;background:rgba(255,255,255,.14)}
+
+  /* FORM */
+  .builder{background:linear-gradient(180deg,#140B06,#160C06);padding:100px 0 60px}
+  .k{font-size:13px;font-weight:600;letter-spacing:.12em;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:14px}
+  h2{font-weight:700;font-size:44px;letter-spacing:-.03em;margin:0}
+  .formgrid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-top:28px}
+  .field{background:var(--glass);border:1px solid var(--stroke);border-radius:24px;padding:20px 22px}
+  .field.goal{grid-column:1/-1}
+  .field label{display:block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:8px}
+  input,textarea{width:100%;background:transparent;border:0;color:#fff;font:inherit;outline:none;resize:vertical}
+  .goal input{font-weight:700;font-size:40px;letter-spacing:-.03em}
+  input::placeholder,textarea::placeholder{color:rgba(255,255,255,.3)}
+  textarea{min-height:110px;font-size:15px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .chip{font-size:14px;font-weight:500;color:#fff;background:var(--glass2);border:1px solid var(--stroke);border-radius:99px;padding:8px 16px}
+  .chip:hover{background:rgba(255,255,255,.2)}
+  .go{grid-column:1/-1;display:flex;justify-content:flex-end;align-items:center;gap:18px;margin-top:6px}
+  .err{color:var(--red);font-weight:500}
+  .go .cta{width:auto;padding:0 34px;height:72px;font-size:22px;border-radius:20px}
+  .cta:disabled{opacity:.55;cursor:wait}
+
+  /* RESULTS */
+  #out{background:#0E0806;padding-bottom:100px}
+  .loading{padding:60px 0;color:var(--mute);font-weight:500;font-size:17px;margin:0}
+  .loading i{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--green);margin-right:10px;animation:pulse 1.1s infinite}
+  @keyframes pulse{50%{opacity:.25;transform:scale(.7)}}
+  .prog{padding:64px 0 40px;max-width:760px}
+  .prog h2{display:flex;align-items:baseline;gap:16px;line-height:1.05}
+  .prog h2 span{font-size:20px;font-weight:600;color:rgba(255,255,255,.4);font-variant-numeric:tabular-nums}
+  .plist{list-style:none;margin:28px 0 0;padding:0;display:flex;flex-direction:column;gap:12px}
+  .plist li{display:flex;align-items:center;gap:14px;font-size:18px;font-weight:500;color:rgba(255,255,255,.3);transition:color .3s}
+  .plist li b{width:24px;height:24px;border-radius:50%;border:1.5px solid rgba(255,255,255,.2);flex:none;display:grid;place-items:center;font-size:13px}
+  .plist li.on{color:#fff}.plist li.on b{border-color:var(--green);border-top-color:transparent;animation:spin .8s linear infinite}
+  .plist li.done{color:rgba(255,255,255,.6)}.plist li.done b{background:var(--green);border-color:var(--green);color:#0E0806}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .hook .by a{color:inherit;text-decoration:underline;text-underline-offset:2px}
+  .linkbtn{background:none;border:0;color:rgba(255,255,255,.6);font-weight:600;font-size:16px;text-decoration:underline;text-underline-offset:3px}
+  .linkbtn:hover{color:#fff}
+  /* SWIPE DECK */
+  .decksec{background:radial-gradient(70% 90% at 75% 30%,#3A1F0D 0%,#160C06 70%);padding:90px 0 110px}
+  .deckgrid{display:grid;grid-template-columns:1fr 420px;gap:60px;align-items:center}
+  .likes{display:flex;flex-direction:column;gap:8px;margin:24px 0}
+  .likes div{display:flex;justify-content:space-between;gap:12px;padding:12px 16px;border-radius:14px;background:rgba(52,199,89,.12);color:#C8F5D4;font-weight:600;font-size:14px}
+  .likes div span{opacity:.7;font-weight:500;white-space:nowrap}
+  .deckcta{display:flex;align-items:center;gap:20px}
+  .deckcta .cta{width:auto;padding:0 32px;height:68px;font-size:21px;border-radius:18px}
+  .keys{margin-top:14px;font-size:13px;color:rgba(255,255,255,.35)}
+  .deckcol{display:flex;flex-direction:column;align-items:center;gap:24px}
+  .stack{position:relative;width:400px;height:540px}
+  .oc{position:absolute;inset:0;border-radius:32px;padding:24px;display:flex;flex-direction:column;gap:12px;color:#fff;cursor:grab;user-select:none;touch-action:none;
+    background:linear-gradient(180deg,var(--c1,#7A4A22),#1B120C 75%);box-shadow:0 30px 60px rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.1);transition:transform .35s cubic-bezier(.2,.8,.2,1),opacity .35s}
+  .oc.drag{transition:none;cursor:grabbing}
+  .oc .t{display:flex;justify-content:space-between;align-items:center}
+  .oc .type{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:6px 12px;border-radius:99px;background:rgba(255,255,255,.16)}
+  .oc .org{margin-top:auto;font-size:15px;font-weight:600;opacity:.75}
+  .oc h3{margin:0;font-size:34px;line-height:1.02;letter-spacing:-.03em;font-weight:700}
+  .oc .pitch{font-size:17px;font-weight:500;line-height:1.35;opacity:.85}
+  .oc .meta{display:flex;gap:8px;flex-wrap:wrap;margin:0}
+  .oc .meta span{font-size:12px;font-weight:600;padding:5px 10px;border-radius:9px;background:rgba(255,255,255,.12)}
+  .oc .meta .dl{background:rgba(255,214,10,.18);color:#FFE27A}
+  .oc .meta .yt{background:rgba(232,163,90,.2);color:var(--amber)}
+  .stamp{position:absolute;top:28px;font-size:26px;font-weight:800;letter-spacing:.08em;padding:6px 14px;border-radius:12px;border:3px solid;opacity:0;transform:rotate(-12deg)}
+  .stamp.y{left:24px;color:var(--green);border-color:var(--green)}
+  .stamp.n{right:24px;color:var(--red);border-color:var(--red);transform:rotate(12deg)}
+  .swbtns{display:flex;gap:28px}
+  .swb{width:76px;height:76px;border-radius:50%;font-size:30px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;transition:transform .15s}
+  .swb:hover{transform:scale(1.08)}
+  .swb.yes{background:#fff;color:#E0245E}
+  .empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:rgba(255,255,255,.55);font-weight:500;border:1.5px dashed rgba(255,255,255,.2);border-radius:32px;padding:30px}
+  /* CALENDAR */
+  .calbtn{height:40px;padding:0 16px;border-radius:99px;font-weight:600;font-size:14px;background:rgba(255,214,10,.14);color:#FFE27A;border:1px solid rgba(255,214,10,.25)}
+  .calbtn:hover{background:rgba(255,214,10,.22)}
+  .calbtn.added{background:rgba(52,199,89,.16);color:#9BEDB3;border-color:rgba(52,199,89,.3)}
+  .shortlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+  .sl{padding:20px;border-radius:22px;background:var(--glass);border:1px solid var(--stroke);display:flex;flex-direction:column;gap:8px}
+  .sl b{font-size:18px;letter-spacing:-.01em}
+  .sl .o{font-size:14px;color:var(--mute)}
+  .sl .d{font-size:14px;font-weight:600;color:#FFE27A}
+  .sl .row2{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+  .sl a{font-size:14px;font-weight:600;color:#fff}
+  .allcal{display:flex;align-items:center;gap:14px}
+  @media(max-width:1100px){.deckgrid{grid-template-columns:1fr}.stack{width:340px;height:500px}}
+  .banner{margin-top:40px;padding:14px 20px;border-radius:16px;background:rgba(255,214,10,.12);color:#FFE27A;font-weight:500;font-size:14px}
+  .rtop{display:flex;justify-content:space-between;align-items:center;padding-top:48px}
+  .goalpill{display:flex;gap:10px;font-size:15px;font-weight:600;padding:14px 22px;border-radius:99px;background:rgba(255,255,255,.1);border:1px solid var(--stroke)}
+  .goalpill span{opacity:.5}
+  .north{margin:40px 0}
+  .north .v{font-weight:700;font-size:76px;line-height:.98;letter-spacing:-.04em;max-width:1100px}
+  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .step{background:var(--glass);border:1px solid var(--stroke);border-radius:24px;padding:22px;display:flex;flex-direction:column;gap:10px}
+  .step.on{background:#fff;color:#111;border-color:#fff}
+  .step .n{font-size:13px;font-weight:600;opacity:.55}
+  .step h3{margin:0;font-size:24px;font-weight:700;letter-spacing:-.02em}
+  .step p{margin:0;font-size:14px;font-weight:500;opacity:.7}
+  .sh{display:flex;justify-content:space-between;align-items:flex-end;margin:56px 0 20px}
+  .sh small{font-size:15px;font-weight:500;color:rgba(255,255,255,.5)}
+  .people{display:flex;flex-direction:column;gap:16px}
+  .pc{display:grid;grid-template-columns:360px 300px 1fr;gap:28px;padding:24px;border-radius:28px;background:rgba(255,255,255,.06);border:1px solid var(--stroke)}
+  .hook{border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:10px;min-height:230px;background:linear-gradient(180deg,#7A4A22,#1B120C)}
+  .av{width:44px;height:44px;border-radius:50%;background:#F2C28B;color:#3A1F0D;display:grid;place-items:center;font-weight:700;font-size:15px}
+  .hook .by{margin-top:auto;display:flex;justify-content:space-between;gap:10px;font-size:14px;font-weight:600}
+  .hook .by span{font-size:12px;font-weight:400;opacity:.6;text-align:right}
+  .hook q{font-size:17px;font-weight:500;line-height:1.3}
+  .who{display:flex;flex-direction:column;gap:12px}
+  .who .name{font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+  .who .head{font-size:14px;font-weight:500;color:var(--mute)}
+  .yt{display:flex;gap:6px;flex-wrap:wrap}
+  .yt span{font-size:12px;font-weight:600;padding:5px 10px;border-radius:9px;background:rgba(232,163,90,.16);color:var(--amber)}
+  .meter .r{display:flex;justify-content:space-between;font-size:12px;font-weight:600;letter-spacing:.08em;color:rgba(255,255,255,.5)}
+  .meter .r b{color:#fff;font-size:13px;letter-spacing:0}
+  .track{height:6px;border-radius:3px;background:rgba(255,255,255,.1);margin-top:6px;overflow:hidden}
+  .track i{display:block;height:100%;border-radius:3px}
+  .why{font-size:13px;color:rgba(255,255,255,.55)}
+  .draft{display:flex;flex-direction:column;gap:12px;min-width:0}
+  .subj{font-size:13px;font-weight:600;color:rgba(255,255,255,.5)}
+  .msg{background:var(--blue);border-radius:22px;padding:14px 18px;font-size:15px;line-height:1.4;white-space:pre-wrap}
+  .acts{display:flex;gap:8px;flex-wrap:wrap}
+  .acts button{height:40px;padding:0 16px;border-radius:99px;font-weight:600;font-size:14px;white-space:nowrap}
+  .fu{font-size:13px;color:rgba(255,255,255,.5)}
+  .week{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .task{display:flex;align-items:center;gap:14px;padding:20px;border-radius:20px;background:var(--glass);border:1px solid var(--stroke);font-weight:600;cursor:pointer}
+  .task input{appearance:none;-webkit-appearance:none;width:22px;height:22px;flex:none;border-radius:7px;border:1.5px solid rgba(255,255,255,.35);margin:0;cursor:pointer}
+  .task input:checked{background:var(--green);border-color:var(--green)}
+  .task input:checked + span{opacity:.5}
+  .meta{margin-top:28px;font-size:13px;color:rgba(255,255,255,.4)}
+  @media(max-width:1100px){.wrap{padding:0 24px}.herogrid{grid-template-columns:1fr}.phone{display:none}h1{font-size:72px}.cta{width:100%}
+    .formgrid,.pc{grid-template-columns:1fr}.steps,.week{grid-template-columns:1fr 1fr}.north .v{font-size:48px}}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="glow g1"></div><div class="glow g2"></div><div class="glow g3"></div>
+  <div class="wrap">
+    <nav>
+      <div class="brand"><span class="logo">B_</span><span class="seen">as seen at y/cs × SpaceXSI Grokathon</span></div>
+      <div class="navr"><span id="status" class="status"><i></i>connecting…</span><a href="#build" class="pillbtn whitebtn">Get started</a></div>
+    </nav>
+    <div class="herogrid">
+      <div>
+        <h1>Get where<br/>you’re going.</h1>
+        <p class="lede">Tell Bulldog Reach your goal. Grok maps the path, finds the Yalies who can unlock it, and writes the one message that moves you forward.</p>
+        <a class="cta" href="#build">
+          <svg width="30" height="30" viewBox="0 0 28 28"><rect width="28" height="28" rx="7" fill="#34C759"/><path d="M14 7c-4.4 0-8 2.9-8 6.5 0 2 1.1 3.8 2.9 5l-.7 2.8 3.1-1.6c.9.2 1.8.3 2.7.3 4.4 0 8-2.9 8-6.5S18.4 7 14 7z" fill="#fff"/></svg>
+          Start my game plan</a>
+        <div class="proof"><b style="background:#E8B67A"></b><b style="background:#9DB7E8"></b><b style="background:#E8A0A0"></b><span>Built for Yale — ranks by college, clubs &amp; classes</span></div>
+      </div>
+      <div class="phone"><div class="screen">
+        <div class="sbar"><span>5:42</span><span style="font-size:12px">5G ▮</span></div>
+        <div class="chead"><b>B_</b>Bulldog Reach ›</div>
+        <div class="row me"><div class="bub">I want to work on Grok at SpaceXSI this summer</div></div>
+        <div class="row"><div class="bub">Here’s your path: 4 steps, 6 people. Start with Maya — same college, posted 2 days ago.</div></div>
+        <div class="scard">
+          <div class="t"><b>B_</b><span class="tag">71% reply odds</span></div>
+          <div class="by">Maya Chen posted <span>2 days ago</span></div>
+          <q>we’re taking 2 interns on agent evals — DM me what you’ve built</q>
+          <div class="ties"><span>Silliman</span><span>y/cs</span><span>CS ’24</span></div>
+        </div>
+        <div class="row me"><div class="bub">Draft my message to her</div></div>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<section class="builder" id="build">
+  <div class="wrap">
+    <div class="k">Step one</div>
+    <h2>What are you trying to make happen?</h2>
+    <form id="f" class="formgrid">
+      <div class="field goal">
+        <label>My goal</label>
+        <input id="goal" placeholder="Land a summer internship building AI agents" autocomplete="off" />
+        <div class="chips">
+          <button type="button" class="chip">Work on Grok at SpaceXSI this summer</button>
+          <button type="button" class="chip">Join a comp-bio research lab as a sophomore</button>
+          <button type="button" class="chip">Break into climate VC</button>
+          <button type="button" class="chip">Find a cofounder for my edtech startup</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>People to consider · optional — paste LinkedIn profiles, separate with ---</label>
+        <textarea id="profiles" placeholder="Leave empty and Grok will propose who to find."></textarea>
+      </div>
+      <div class="field">
+        <label>About me</label>
+        <textarea id="about" placeholder="’27 · Silliman · CS + Econ · y/cs · built …"></textarea>
+      </div>
+      <div class="go"><span id="err" class="err"></span>
+        <button type="button" class="linkbtn" id="skip">Skip to game plan</button>
+        <button class="cta" id="btn">Find my opportunities →</button></div>
+    </form>
+  </div>
+</section>
+
+<section id="deck" class="decksec" hidden>
+  <div class="wrap deckgrid">
+    <div>
+      <div class="k">Step two · swipe</div>
+      <h2>Which of these do<br/>you actually want?</h2>
+      <p class="lede" style="font-size:18px;margin-top:16px">Swipe right on what excites you, left on what doesn’t. Grok aims your outreach at your picks and puts their deadlines on your calendar.</p>
+      <div class="likes" id="likes"></div>
+      <div class="deckcta">
+        <button class="cta" id="planbtn" disabled>Build my plan →</button>
+        <button type="button" class="linkbtn" id="more">More options</button>
+      </div>
+      <div class="keys">← / → keys work too</div>
+    </div>
+    <div class="deckcol">
+      <div class="stack" id="stack"></div>
+      <div class="swbtns">
+        <button class="swb no" id="nobtn" aria-label="Pass">✕</button>
+        <button class="swb yes" id="yesbtn" aria-label="Like">♥</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="out"></section>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const oddsColor = (n) => (n >= 65 ? "var(--green)" : n >= 45 ? "var(--yellow)" : "var(--red)");
+const initials = (n) => String(n || "?").replace(/\(.*?\)/g, "").replace(/^(Prof\.|Dr\.)\s*/, "").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+let lastPeople = [];
+
+fetch("/api/status").then((r) => r.json()).then((s) => {
+  const el = $("#status");
+  el.innerHTML = `<i></i>${s.demo ? "demo mode" : "Grok · " + esc(s.model)}`;
+  if (!s.demo) el.classList.add("live");
+});
+
+document.querySelectorAll(".chip").forEach((c) => (c.onclick = () => ($("#goal").value = c.textContent)));
+$("#about").value = localStorage.bb_about || "";
+
+// ---------------- state ----------------
+const S = { goal: "", deck: [], liked: [], seen: [], plan: null };
+const api = async (path, body) => {
+  const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || "Something broke");
+  return d;
+};
+const readGoal = () => {
+  const goal = $("#goal").value.trim();
+  if (!goal) { $("#err").textContent = "Tell us your goal first."; return null; }
+  localStorage.bb_about = $("#about").value;
+  $("#err").textContent = "";
+  if (goal !== S.goal) { S.goal = goal; S.liked = []; S.seen = []; S.deck = []; }
+  return goal;
+};
+
+// Step 1 → find opportunities (swipe deck)
+$("#f").onsubmit = async (e) => {
+  e.preventDefault();
+  if (!readGoal()) return;
+  await loadDeck();
+};
+$("#skip").onclick = () => { if (readGoal()) buildPlan(); };
+$("#more").onclick = () => loadDeck();
+$("#planbtn").onclick = () => buildPlan();
+
+async function loadDeck() {
+  $("#btn").disabled = $("#more").disabled = true;
+  $("#deck").hidden = false;
+  $("#stack").innerHTML = `<div class="empty"><div><p class="loading" style="padding:0"><i></i>Grok is searching for real openings…</p></div></div>`;
+  renderLikes();
+  window.scrollTo({ top: $("#deck").offsetTop, behavior: "smooth" });
+  try {
+    const d = await api("/api/opportunities", { goal: S.goal, about: $("#about").value, seen: S.seen });
+    const fresh = (d.opportunities || []).filter((o) => o && o.title && !S.seen.includes(o.title));
+    fresh.forEach((o) => {
+      S.seen.push(o.title);
+      // Never put a past deadline on the calendar: Grok sometimes returns last cycle's date.
+      if (o.deadline && (!/^\d{4}-\d{2}-\d{2}$/.test(o.deadline) || o.deadline < new Date().toISOString().slice(0, 10))) {
+        o.deadline_note = /^\d{4}/.test(o.deadline) ? `Last cycle closed ${fmtDate(o.deadline)} — watch for the next one` : o.deadline_note || "Check the site";
+        o.deadline = null;
+      }
+    });
+    S.deck = fresh.sort((a, b) => (b.fit || 0) - (a.fit || 0));
+    renderDeck();
+  } catch (err) {
+    $("#stack").innerHTML = `<div class="empty">Couldn’t load opportunities (${esc(err.message.slice(0, 80))}).<br/>You can still build your plan.</div>`;
+  } finally {
+    $("#btn").disabled = $("#more").disabled = false;
+  }
+}
+
+const TYPE_COLORS = { internship: "#7A4A22", job: "#2E4A6B", research: "#3E5A3A", fellowship: "#6B3A55", program: "#5A4A22" };
+const fmtDate = (iso) => { if (!iso) return ""; const d = new Date(iso + "T12:00:00"); return isNaN(d) ? iso : d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); };
+
+function renderDeck() {
+  const stack = $("#stack");
+  if (!S.deck.length) {
+    stack.innerHTML = `<div class="empty"><div>That’s the deck.<br/><b style="color:#fff">${S.liked.length} picked.</b><br/><br/>Build your plan, or load more options.</div></div>`;
+    return;
+  }
+  // Render top 3 cards, top card last (on top)
+  stack.innerHTML = S.deck.slice(0, 3).map((o, i) => `
+    <div class="oc" data-i="${i}" style="--c1:${TYPE_COLORS[o.type] || "#7A4A22"};transform:translateY(${i * 14}px) scale(${1 - i * 0.04});z-index:${10 - i};opacity:${i > 1 ? 0.6 : 1}">
+      <span class="stamp y">WANT</span><span class="stamp n">PASS</span>
+      <div class="t"><span class="type">${esc(o.type || "role")}</span><span class="tag">${esc(o.fit ?? "–")}% fit</span></div>
+      <div class="org">${esc(o.org)} · ${esc(o.location || "")}</div>
+      <h3>${esc(o.title)}</h3>
+      <div class="pitch">${esc(o.pitch)}</div>
+      <div class="meta">
+        <span class="dl">${o.deadline ? "Due " + esc(fmtDate(o.deadline)) : esc(o.deadline_note || "Rolling")}</span>
+        ${o.yale_tie ? `<span class="yt">${esc(o.yale_tie)}</span>` : ""}
+      </div>
+    </div>`).reverse().join("");
+  attachDrag(stack.querySelector('.oc[data-i="0"]'));
+}
+
+function attachDrag(card) {
+  if (!card) return;
+  let x0 = 0, y0 = 0, dx = 0, dy = 0, down = false;
+  const y = card.querySelector(".stamp.y"), n = card.querySelector(".stamp.n");
+  card.onpointerdown = (e) => { down = true; x0 = e.clientX; y0 = e.clientY; card.setPointerCapture(e.pointerId); card.classList.add("drag"); };
+  card.onpointermove = (e) => {
+    if (!down) return;
+    dx = e.clientX - x0; dy = e.clientY - y0;
+    card.style.transform = `translate(${dx}px,${dy}px) rotate(${dx / 18}deg)`;
+    y.style.opacity = Math.max(0, dx / 120); n.style.opacity = Math.max(0, -dx / 120);
+  };
+  card.onpointerup = () => {
+    if (!down) return;
+    down = false; card.classList.remove("drag");
+    if (Math.abs(dx) > 110) swipe(dx > 0);
+    else { card.style.transform = ""; y.style.opacity = n.style.opacity = 0; }
+    dx = dy = 0;
+  };
+}
+
+function swipe(like) {
+  const card = $('#stack .oc[data-i="0"]');
+  if (!card || !S.deck.length) return;
+  const o = S.deck.shift();
+  if (like) S.liked.push(o);
+  card.style.transform = `translate(${like ? 600 : -600}px, -40px) rotate(${like ? 30 : -30}deg)`;
+  card.style.opacity = 0;
+  card.querySelector(like ? ".stamp.y" : ".stamp.n").style.opacity = 1;
+  renderLikes();
+  setTimeout(renderDeck, 260);
+}
+$("#yesbtn").onclick = () => swipe(true);
+$("#nobtn").onclick = () => swipe(false);
+document.addEventListener("keydown", (e) => {
+  if ($("#deck").hidden || /INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
+  if (e.key === "ArrowRight") swipe(true);
+  if (e.key === "ArrowLeft") swipe(false);
+});
+
+function renderLikes() {
+  $("#likes").innerHTML = S.liked.map((o) => `<div>${esc(o.title)} · ${esc(o.org)}<span>${o.deadline ? "Due " + esc(fmtDate(o.deadline)) : "Rolling"}</span></div>`).join("");
+  $("#planbtn").disabled = false;
+  $("#planbtn").textContent = S.liked.length ? `Build my plan for ${S.liked.length} pick${S.liked.length > 1 ? "s" : ""} →` : "Build my plan →";
+}
+
+// Step 3 → game plan
+async function buildPlan() {
+  const goal = S.goal;
+  $("#btn").disabled = $("#planbtn").disabled = true;
+  const stop = showProgress();
+  try {
+    const d = await api("/api/plan", { goal, about: $("#about").value, profiles: $("#profiles").value, liked: S.liked });
+    stop();
+    d._liked = S.liked;
+    try { localStorage.bb_last = JSON.stringify({ d, goal }); } catch {}
+    render(d, goal);
+  } catch (err) {
+    stop();
+    const last = (() => { try { return JSON.parse(localStorage.bb_last || "null"); } catch { return null; } })();
+    if (last) render(last.d, last.goal, `Grok didn’t answer this time (${err.message.slice(0, 80)}). Showing your last plan.`);
+    else { $("#out").innerHTML = ""; $("#err").textContent = err.message; }
+  } finally {
+    $("#btn").disabled = $("#planbtn").disabled = false;
+  }
+}
+
+function showProgress() {
+  const steps = ["Turning your goal into a north star", "Searching X for recent posts", "Searching the web for Yale ties", "Ranking people by fit × reply odds", "Drafting one message per person"];
+  const at = [0, 2, 6, 10, 14]; // seconds each step lights up
+  $("#out").innerHTML = `<div class="wrap prog">
+    <div class="k">Grok · live search</div>
+    <h2>Building your game plan <span id="tick">0s</span></h2>
+    <ul class="plist">${steps.map((s) => `<li><b></b>${esc(s)}</li>`).join("")}</ul></div>`;
+  window.scrollTo({ top: $("#out").offsetTop - 20, behavior: "smooth" });
+  const t0 = Date.now();
+  const lis = [...document.querySelectorAll(".plist li")];
+  const tick = () => {
+    const s = (Date.now() - t0) / 1000;
+    $("#tick") && ($("#tick").textContent = Math.floor(s) + "s");
+    let cur = 0; at.forEach((a, i) => { if (s >= a) cur = i; });
+    lis.forEach((li, i) => { li.className = i < cur ? "done" : i === cur ? "on" : ""; li.firstChild.textContent = i < cur ? "✓" : ""; });
+  };
+  tick();
+  const id = setInterval(tick, 250);
+  return () => clearInterval(id);
+}
+
+// ---------------- calendar ----------------
+const ymd = (d) => d.toISOString().slice(0, 10).replace(/-/g, "");
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const icsEsc = (s) => String(s || "").replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/[,;]/g, (c) => "\\" + c);
+function eventsForPlan(d) {
+  const ev = [];
+  (d._liked || []).forEach((o) => {
+    if (!o.deadline) return;
+    const day = new Date(o.deadline + "T12:00:00");
+    if (isNaN(day)) return;
+    ev.push({ id: "dl-" + o.title, title: `⏰ Apply: ${o.title} @ ${o.org}`, date: day, details: `${o.pitch || ""}\n${o.url || ""}\n— Bulldog Reach`, alarmDays: 3 });
+  });
+  (d.people || []).forEach((p) => {
+    const day = addDays(new Date(), +p.follow_up_days || 5);
+    ev.push({ id: "fu-" + p.name, title: `Follow up: ${String(p.name).replace(/\(.*?\)/g, "").trim()}`, date: day, details: `If no reply: ${p.follow_up || ""}\n\nOriginal ask: ${p.ask || ""}\n— Bulldog Reach`, alarmDays: 0 });
+  });
+  return ev;
+}
+function ics(events) {
+  const stamp = new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  const body = events.map((e) => [
+    "BEGIN:VEVENT",
+    `UID:${Math.random().toString(36).slice(2)}@bulldogreach`,
+    `DTSTAMP:${stamp}`,
+    `DTSTART;VALUE=DATE:${ymd(e.date)}`,
+    `DTEND;VALUE=DATE:${ymd(addDays(e.date, 1))}`,
+    `SUMMARY:${icsEsc(e.title)}`,
+    `DESCRIPTION:${icsEsc(e.details)}`,
+    "BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${icsEsc(e.title)}`, e.alarmDays ? `TRIGGER:-P${e.alarmDays}D` : "TRIGGER:-PT0M", "END:VALARM",
+    "END:VEVENT",
+  ].join("\r\n")).join("\r\n");
+  return `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Bulldog Reach//EN\r\nCALSCALE:GREGORIAN\r\n${body}\r\nEND:VCALENDAR\r\n`;
+}
+function downloadICS(events, name) {
+  const blob = new Blob([ics(events)], { type: "text/calendar" });
+  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: name });
+  document.body.appendChild(a); a.click(); a.remove();
+}
+function gcal(e) {
+  const p = new URLSearchParams({ action: "TEMPLATE", text: e.title, dates: `${ymd(e.date)}/${ymd(addDays(e.date, 1))}`, details: e.details });
+  return "https://calendar.google.com/calendar/render?" + p.toString();
+}
+function addCal(id, btn) {
+  const e = eventsForPlan(S.plan).find((x) => x.id === id);
+  if (!e) return;
+  window.open(gcal(e), "_blank");
+  btn.classList.add("added"); btn.textContent = "✓ On calendar";
+}
+function addAllCal() {
+  const evs = eventsForPlan(S.plan);
+  if (evs.length) downloadICS(evs, "bulldog-reach-plan.ics");
+}
+const linkify = (src) => {
+  const m = String(src || "").match(/https?:\/\/[^\s)]+/);
+  if (!m) return esc(src);
+  const host = m[0].replace(/^https?:\/\/(www\.)?/, "").split("/")[0];
+  const label = String(src).replace(m[0], "").replace(/[()]/g, "").trim() || host;
+  return `<a href="${esc(m[0])}" target="_blank" rel="noopener">${esc(label.slice(0, 40))} ↗</a>`;
+};
+
+function render(d, goal, warning) {
+  const people = (d.people || []).sort((a, b) => b.fit_score * b.reply_likelihood - a.fit_score * a.reply_likelihood);
+  lastPeople = people;
+  S.plan = d;
+  const live = d._meta && !d._meta.demo;
+  $("#out").innerHTML = `<div class="wrap">
+    ${warning ? `<div class="banner">${esc(warning)}</div>` : ""}
+    <div class="rtop">
+      <div class="goalpill"><span>Goal</span>${esc(goal)}</div>
+      <span class="status ${live ? "live" : ""}"><i></i>${live ? "Grok" + (d._meta.live_search ? " · live X search" : "") : "demo data"}</span>
+    </div>
+    <div class="north"><div class="k">North star</div><div class="v">${esc(d.north_star)}</div></div>
+    <div class="steps">${(d.game_plan || []).map((s, i) => `
+      <div class="step ${i === 0 ? "on" : ""}">
+        <div class="n">${esc(String(s.step).padStart(2, "0"))}${i === 0 ? "  ·  you are here" : ""}</div>
+        <h3>${esc(s.title)}</h3><p>${esc(s.who)}</p><p>Ask → ${esc(s.ask)}</p>
+      </div>`).join("")}
+    </div>
+    <div class="sh"><h2>Who to reach, ranked.</h2><small>Sorted by goal fit × reply odds</small></div>
+    <div class="people">${people.map((p, i) => `
+      <div class="pc">
+        <div class="hook">
+          <div class="t"><div class="av">${esc(initials(p.name))}</div><span class="tag">#${i + 1} · Step ${esc(p.step)}</span></div>
+          <div class="by">${esc(p.name)} <span>${linkify(p.hook_source)}</span></div>
+          <q>${esc(p.hook)}</q>
+        </div>
+        <div class="who">
+          <div class="name">${esc(p.name)}</div>
+          <div class="head">${esc(p.headline)}</div>
+          <div class="yt">${(p.yale_ties || []).map((t) => `<span>${esc(t)}</span>`).join("")}</div>
+          <div class="meter"><div class="r">GOAL FIT <b>${esc(p.fit_score)}</b></div><div class="track"><i style="width:${+p.fit_score || 0}%;background:var(--amber)"></i></div></div>
+          <div class="meter"><div class="r">REPLY ODDS <b>${esc(p.reply_likelihood)}%</b></div><div class="track"><i style="width:${+p.reply_likelihood || 0}%;background:${oddsColor(+p.reply_likelihood)}"></i></div></div>
+          <div class="why">${esc(p.likelihood_reason)}</div>
+        </div>
+        <div class="draft">
+          <div class="subj">Subject: ${esc(p.subject)} · Ask: ${esc(p.ask)}</div>
+          <div class="msg" id="m${i}">${esc(p.message)}</div>
+          <div class="acts">
+            <button class="whitebtn" onclick="copy(${i}, this)">Copy message</button>
+            <button class="glassbtn" onclick="openLinkedIn(${i})">Open LinkedIn</button>
+            <button class="calbtn" onclick="addCal(${esc(JSON.stringify("fu-" + p.name))}, this)">📅 Follow-up in ${+p.follow_up_days || 5}d</button>
+          </div>
+          <div class="fu">No reply in ${+p.follow_up_days || 5} days → ${esc(p.follow_up)}</div>
+        </div>
+      </div>`).join("")}
+    </div>
+    ${(d._liked || []).length ? `
+    <div class="sh"><h2>Your picks &amp; deadlines.</h2><small>From your swipes</small></div>
+    <div class="shortlist">${d._liked.map((o) => `
+      <div class="sl">
+        <b>${esc(o.title)}</b>
+        <div class="o">${esc(o.org)} · ${esc(o.type)}</div>
+        <div class="d">${o.deadline ? "Due " + esc(fmtDate(o.deadline)) : esc(o.deadline_note || "Rolling — apply early")}</div>
+        <div class="row2">
+          ${o.deadline ? `<button class="calbtn" onclick="addCal(${esc(JSON.stringify("dl-" + o.title))}, this)">📅 Add deadline</button>` : ""}
+          ${o.url ? `<a href="${esc(o.url)}" target="_blank" rel="noopener" style="align-self:center">Apply ↗</a>` : ""}
+        </div>
+      </div>`).join("")}
+    </div>` : ""}
+    <div class="sh"><h2>This week.</h2>
+      <div class="allcal"><small>${eventsForPlan(d).length} reminders</small><button class="cta" style="width:auto;height:52px;padding:0 22px;font-size:16px;border-radius:14px" onclick="addAllCal()">📅 Add all to calendar (.ics)</button></div>
+    </div>
+    <div class="week">${(d.this_week || []).map((t) => `<label class="task"><input type="checkbox"><span>${esc(t)}</span></label>`).join("")}</div>
+    <div class="meta">${live ? "Generated by " + esc(d._meta.model) : "Demo data — add XAI_API_KEY to .env for live Grok"}</div>
+  </div>`;
+}
+
+function openLinkedIn(i) {
+  const name = String(lastPeople[i]?.name || "").replace(/\(.*?\)/g, "").trim();
+  window.open("https://www.linkedin.com/search/results/people/?keywords=" + encodeURIComponent(name + " Yale"), "_blank");
+}
+function copy(i, btn) {
+  navigator.clipboard.writeText($("#m" + i).textContent);
+  btn.textContent = "Copied ✓";
+  setTimeout(() => (btn.textContent = "Copy message"), 1400);
+}
+</script>
+</body>
+</html>
