@@ -60,6 +60,53 @@ Return ONLY JSON:
    "yale_tie": string, "fit": number          // 0-100 fit for this student
 } ] }`;
 
+const DETAIL_SYSTEM = `You help a Yale student apply to ONE specific opportunity. Research it (official page, Yale OCS, employer events, X posts) and return what they need to act.
+Rules:
+- events: real upcoming dates only (after today): application deadline(s), info sessions, office hours, employer/Yale OCS events, networking events, recruiter coffee chats. date YYYY-MM-DD or null if unknown; set verified=true only if you saw the date on an official/primary source and include its url.
+- checklist: 5-9 concrete, ordered steps to submit a strong application (materials, essays, recommenders, outreach, prep). Short imperative text.
+- next_actions: the 3 most important things to do THIS WEEK.
+- messages: 1-3 short drafts (under 90 words) to real or role-described people who can help (Yale alumni at the org, the program contact, a professor). One specific ask each. Never invent quotes.
+- keywords: 8-15 skills/terms the application and resume should reflect.
+Return ONLY JSON:
+{ "summary": string, "eligibility": string,
+  "events": [ { "title": string, "kind": "deadline"|"info_session"|"office_hours"|"event"|"coffee_chat", "date": string|null, "time": string, "url": string, "verified": boolean } ],
+  "checklist": [ { "id": string, "text": string, "kind": "application"|"outreach"|"prep" } ],
+  "next_actions": [string],
+  "messages": [ { "to": string, "why": string, "subject": string, "body": string } ],
+  "keywords": [string] }`;
+
+const RESUME_PARSE_SYSTEM = `Convert a student's resume text (and optional LinkedIn profile export text) into structured JSON. Copy facts exactly; do NOT invent, embellish, or add numbers. Merge LinkedIn-only items into "other" or the right section and mark them with "source":"linkedin".
+Give every item and bullet a short unique id (e.g. "e1", "e1b2").
+Return ONLY JSON:
+{ "name": string, "contact": { "email": string, "phone": string, "location": string, "links": [string] },
+  "summary": string,
+  "section_order": ["education","experience","projects","leadership","skills"],
+  "education": [ { "id": string, "school": string, "degree": string, "dates": string, "location": string, "bullets": [ { "id": string, "text": string } ] } ],
+  "experience": [ { "id": string, "org": string, "role": string, "dates": string, "location": string, "source": "resume"|"linkedin", "bullets": [ { "id": string, "text": string } ] } ],
+  "projects": [ { "id": string, "name": string, "dates": string, "bullets": [ { "id": string, "text": string } ] } ],
+  "leadership": [ { "id": string, "org": string, "role": string, "dates": string, "bullets": [ { "id": string, "text": string } ] } ],
+  "skills": [ { "id": string, "label": string, "items": [string] } ] }`;
+
+const TAILOR_SYSTEM = `You are a careful resume editor. Given a student's structured resume and ONE target opportunity, propose specific, reviewable edits that make the resume fit THIS opportunity. The student approves each edit; nothing is applied automatically.
+Hard rules (honesty):
+- Never invent experience, skills, employers, titles, dates, results, or numbers. Only rephrase, reorder, emphasize, or trim what is already there.
+- Every claim in "after" must be supported by the original bullet or elsewhere in the resume. Do NOT add scope or impact words the resume doesn't state (e.g. "large-scale", "production", "optimized", "led", "high-impact", "comprehensive") — if the student might have done it, ask via a placeholder like "[scale?]" and set needs_input=true.
+- Prefer stronger verbs and the opportunity's vocabulary ONLY where the meaning stays identical.
+- If a bullet would be stronger with a metric the resume doesn't contain, write the rewrite with a placeholder like "[X%]" or "[N users]" and set needs_input=true. Never guess a number.
+- If numbers would hurt for this opportunity (e.g. some research or arts programs), you may suggest removing them.
+- Keywords: only suggest adding a skill/term if the resume or LinkedIn already supports it.
+Suggestion kinds:
+- "rewrite_bullet": target {section, item_id, bullet_id}, before, after
+- "reorder_bullets": target {section, item_id}, order: [bullet_ids in new order]
+- "reorder_items": target {section}, order: [item_ids in new order]
+- "reorder_sections": order: [section names]
+- "hide_item": target {section, item_id} — de-emphasize something irrelevant (student can keep it)
+- "add_skill": target {skill_id or null, label}, after: the skill term
+- "edit_summary": before, after
+Return 6-14 high-impact suggestions, most important first. Return ONLY JSON:
+{ "fit_notes": string, "keywords": [string],
+  "suggestions": [ { "id": string, "kind": string, "target": object, "before": string, "after": string, "order": [string], "reason": string, "needs_input": boolean } ] }`;
+
 async function post(url, body, ms) {
   const r = await fetch(url, {
     method: "POST",
@@ -109,6 +156,17 @@ async function grokJSON(system, user, searchHint) {
   }
 }
 
+// Plain JSON call, no search (resume parsing / tailoring work only on what the student gave us).
+async function grokPlain(system, user, ms = 90000) {
+  const data = await post("https://api.x.ai/v1/chat/completions", {
+    model: MODEL,
+    temperature: 0.2,
+    response_format: { type: "json_object" },
+    messages: [{ role: "system", content: `${system}\n\nToday is ${today()}.` }, { role: "user", content: user }],
+  }, ms);
+  return parseJSON(data.choices?.[0]?.message?.content);
+}
+
 function planPrompt({ goal, about, profiles, liked }) {
   const likedTxt = (liked || []).map((o) => `- ${o.title} @ ${o.org} (${o.type}${o.deadline ? ", deadline " + o.deadline : ""}) ${o.url || ""}`).join("\n");
   return `GOAL: ${goal}\n\nABOUT ME: ${about || "(not given)"}\n\nOPPORTUNITIES I LIKED:\n${likedTxt || "(none)"}\n\nPROFILES:\n${profiles?.trim() || "(none pasted — propose people/roles to find)"}`;
@@ -156,7 +214,13 @@ const SB_ANON = process.env.SUPABASE_ANON_KEY || "";
 const SB_SERVICE = process.env.SUPABASE_SERVICE_KEY || "";
 const AUTH = !!(SB_URL && SB_ANON && SB_SERVICE);
 const DOMAIN = (process.env.ALLOWED_DOMAIN || "yale.edu").toLowerCase();
-const LIMITS = { plan: +process.env.DAILY_PLAN_LIMIT || 10, deck: +process.env.DAILY_DECK_LIMIT || 15 };
+const LIMITS = {
+  plan: +process.env.DAILY_PLAN_LIMIT || 10,
+  deck: +process.env.DAILY_DECK_LIMIT || 15,
+  detail: +process.env.DAILY_DETAIL_LIMIT || 40, // opportunity research when added to cart
+  tailor: +process.env.DAILY_TAILOR_LIMIT || 20,
+  parse: +process.env.DAILY_PARSE_LIMIT || 6,
+};
 const MONTHLY_CAP = +process.env.MONTHLY_CALL_CAP || 3000; // total Grok calls across all users per month
 const STATUSES = ["todo", "sent", "replied", "meeting", "referred", "no_reply"];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -181,7 +245,8 @@ const domainOk = (email) => email.endsWith("@" + DOMAIN) || email.endsWith("." +
 async function sb(pathq, { method = "GET", body, prefer } = {}) {
   const r = await fetch(`${SB_URL}/rest/v1/${pathq}`, {
     method,
-    headers: { apikey: SB_SERVICE, Authorization: `Bearer ${SB_SERVICE}`, "Content-Type": "application/json", ...(prefer ? { Prefer: prefer } : {}) },
+    // New-style keys (sb_secret_…) go in `apikey` only; legacy service_role JWTs also need the Bearer header.
+    headers: { apikey: SB_SERVICE, ...(SB_SERVICE.startsWith("sb_") ? {} : { Authorization: `Bearer ${SB_SERVICE}` }), "Content-Type": "application/json", ...(prefer ? { Prefer: prefer } : {}) },
     body: body ? JSON.stringify(body) : undefined,
   });
   const t = await r.text();
@@ -222,12 +287,100 @@ function readBody(req) {
     let body = "";
     req.on("data", (c) => {
       body += c;
-      if (body.length > 200e3) { reject(new HttpError(413, "Request too large")); req.destroy(); }
+      if (body.length > 600e3) { reject(new HttpError(413, "Request too large")); req.destroy(); }
     });
     req.on("end", () => { try { resolve(JSON.parse(body || "{}")); } catch { resolve({}); } });
   });
 }
 const clip = (s, n) => String(s || "").slice(0, n);
+
+// ---------------- cart / resume helpers ----------------
+const { ics } = require("./lib/ics");
+const store = require("./lib/store")({ AUTH, sb, root: __dirname });
+const CART_STATUSES = ["saved", "applying", "submitted", "interview", "offer", "dropped"];
+const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || "");
+
+function sanitizeOpp(o = {}) {
+  const deadline = isDate(o.deadline) && o.deadline >= today() ? o.deadline : null;
+  return {
+    title: clip(o.title, 200), org: clip(o.org, 160), type: clip(o.type, 30), location: clip(o.location, 120),
+    deadline, deadline_note: clip(o.deadline_note, 200), url: /^https?:\/\//.test(o.url || "") ? clip(o.url, 500) : "",
+    pitch: clip(o.pitch, 300), yale_tie: clip(o.yale_tie, 200), fit: Math.max(0, Math.min(100, +o.fit || 0)),
+  };
+}
+
+function publicBase(req) {
+  if (process.env.PUBLIC_URL) return process.env.PUBLIC_URL.replace(/\/$/, "");
+  const proto = (req.headers["x-forwarded-proto"] || "http").split(",")[0];
+  return `${proto}://${req.headers["x-forwarded-host"] || req.headers.host}`;
+}
+
+// Research one cart item (events, checklist, messages) in the background; never throws.
+async function enrich(user, item) {
+  try {
+    await bump(user, "detail");
+    const detail = DEMO ? demoDetail(item.opp) : await grokJSON(DETAIL_SYSTEM, `OPPORTUNITY:\n${JSON.stringify(item.opp)}`, "Use web_search (official page, ocs.yale.edu, events.yale.edu) and x_search to find real deadlines, info sessions, and contacts.");
+    const safeUrl = (u) => (/^https?:\/\//.test(u || "") ? clip(u, 500) : "");
+    const KINDS = ["deadline", "info_session", "office_hours", "event", "coffee_chat"];
+    detail.events = (detail.events || []).filter((e) => e && e.title).slice(0, 12).map((e) => ({
+      title: clip(e.title, 200), kind: KINDS.includes(e.kind) ? e.kind : "event", time: clip(e.time, 60), url: safeUrl(e.url),
+      verified: !!e.verified && !!safeUrl(e.url), date: isDate(e.date) && e.date >= today() ? e.date : null,
+    }));
+    detail.checklist = (detail.checklist || []).slice(0, 12).map((c, i) => ({ id: String(c.id || "").replace(/[^\w-]/g, "").slice(0, 40) || "c" + i, text: clip(c.text, 200), kind: ["application", "outreach", "prep"].includes(c.kind) ? c.kind : "application" }));
+    detail.messages = (detail.messages || []).slice(0, 4).map((m) => ({ to: clip(m.to, 160), why: clip(m.why, 200), subject: clip(m.subject, 200), body: clip(m.body, 1200) }));
+    detail.next_actions = (detail.next_actions || []).slice(0, 5).map((a) => clip(a, 200));
+    detail.keywords = (detail.keywords || []).slice(0, 20).map((k) => clip(k, 60));
+    await store.cartUpdate(user.id, item.id, { detail });
+  } catch (e) {
+    console.error("enrich failed:", e.message);
+    await store.cartUpdate(user.id, item.id, { detail: { error: e.status === 429 ? e.message : "Couldn't research this one. Try refresh." } }).catch(() => {});
+  }
+}
+
+// Make sure every resume item/bullet has an id and the expected arrays exist.
+function normalizeResume(r = {}) {
+  let n = 0;
+  const id = (x, p) => (x && typeof x === "string" ? clip(x, 40) : `${p}${(n++).toString(36)}`);
+  const bullets = (bs, p) => (Array.isArray(bs) ? bs : []).slice(0, 12).map((b) => (typeof b === "string" ? { id: id(null, p + "b"), text: clip(b, 400) } : { id: id(b.id, p + "b"), text: clip(b.text, 400) }));
+  const items = (arr, p, fields) => (Array.isArray(arr) ? arr : []).slice(0, 15).map((it) => {
+    const o = { id: id(it.id, p), hidden: !!it.hidden, bullets: bullets(it.bullets, p) };
+    for (const f of fields) o[f] = clip(it[f], 200);
+    if (it.source) o.source = clip(it.source, 20);
+    return o;
+  });
+  return {
+    name: clip(r.name, 120), summary: clip(r.summary, 800),
+    contact: { email: clip(r.contact?.email, 120), phone: clip(r.contact?.phone, 40), location: clip(r.contact?.location, 120), links: (r.contact?.links || []).slice(0, 5).map((l) => clip(l, 200)) },
+    section_order: (Array.isArray(r.section_order) && r.section_order.length ? r.section_order : ["education", "experience", "projects", "leadership", "skills"]).filter((s) => ["education", "experience", "projects", "leadership", "skills"].includes(s)),
+    education: items(r.education, "ed", ["school", "degree", "dates", "location"]),
+    experience: items(r.experience, "ex", ["org", "role", "dates", "location"]),
+    projects: items(r.projects, "pr", ["name", "dates"]),
+    leadership: items(r.leadership, "le", ["org", "role", "dates"]),
+    skills: (Array.isArray(r.skills) ? r.skills : []).slice(0, 8).map((s) => ({ id: id(s.id, "sk"), label: clip(s.label, 60), items: (s.items || []).slice(0, 30).map((x) => clip(x, 60)) })),
+  };
+}
+
+function demoDetail(o) {
+  const y = new Date().getFullYear() + 1;
+  return {
+    summary: `${o.title} at ${o.org} (demo data).`, eligibility: "Yale undergraduates (demo).",
+    events: [{ title: `${o.org} info session (demo)`, kind: "info_session", date: `${y}-01-08`, time: "5:00 PM", url: o.url, verified: false }],
+    checklist: [{ id: "c1", text: "Read the full posting and eligibility", kind: "prep" }, { id: "c2", text: "Tailor your resume to the keywords", kind: "application" }, { id: "c3", text: "Message a Yale alum at the org", kind: "outreach" }, { id: "c4", text: "Submit the application", kind: "application" }],
+    next_actions: ["Tailor resume", "Message one alum", "Put the deadline on your calendar"],
+    messages: [{ to: "Yale alum at " + o.org, why: "Warm intro", subject: "Yale student interested in " + o.title, body: "Hi — I'm a Yale student applying to " + o.title + ". Could I ask you two quick questions about the team? 15 minutes any time next week works." }],
+    keywords: ["Python", "research", "communication"],
+  };
+}
+function demoResume() {
+  return { name: "Demo Student", contact: { email: "demo@yale.edu" }, summary: "", section_order: ["education", "experience", "skills"],
+    education: [{ id: "ed1", school: "Yale University", degree: "B.S. Computer Science", dates: "2023–2027", bullets: [] }],
+    experience: [{ id: "ex1", org: "Campus Lab", role: "Research Assistant", dates: "2025", bullets: [{ id: "ex1b1", text: "Built data pipelines for a research project" }, { id: "ex1b2", text: "Presented results at lab meeting" }] }],
+    skills: [{ id: "sk1", label: "Technical", items: ["Python", "SQL"] }] };
+}
+function demoTailor(r) {
+  const b = r.experience?.[0]?.bullets?.[0];
+  return { fit_notes: "Demo suggestions.", keywords: ["Python"], suggestions: b ? [{ kind: "rewrite_bullet", target: { section: "experience", item_id: r.experience[0].id, bullet_id: b.id }, before: b.text, after: b.text + " processing [N] records/day", reason: "Quantify scale (fill in the real number).", needs_input: true }] : [] };
+}
 
 http
   .createServer(async (req, res) => {
@@ -286,6 +439,122 @@ http
         if (!own) return send(res, 404, { error: "Not found" });
         await sb("outreach?on_conflict=plan_id,person", { method: "POST", prefer: "resolution=merge-duplicates", body: { user_id: user.id, plan_id: b.plan_id, person: clip(b.person, 200), status: b.status, updated_at: new Date().toISOString() } });
         return send(res, 200, { ok: true });
+      }
+
+      // ---------------- cart ("shopping cart" of opportunities) ----------------
+      if (url === "/api/cart" && req.method === "GET") {
+        const user = await guard(req);
+        return send(res, 200, { items: await store.cartList(user.id) });
+      }
+      if (url === "/api/cart" && req.method === "POST") {
+        const user = await guard(req);
+        const b = await readBody(req);
+        const opp = sanitizeOpp(b.opp);
+        if (!opp.title) return send(res, 400, { error: "Missing opportunity" });
+        const { item, created } = await store.cartAdd(user.id, opp);
+        if (created) enrich(user, item); // research deadlines/events/checklist in the background
+        return send(res, created ? 201 : 200, { item, created });
+      }
+      const cm = url.match(/^\/api\/cart\/([^/]+)(\/refresh)?$/);
+      if (cm) {
+        const user = await guard(req);
+        const id = cm[1];
+        if (cm[2] && req.method === "POST") {
+          const item = await store.cartGet(user.id, id);
+          if (!item) return send(res, 404, { error: "Not found" });
+          await store.cartUpdate(user.id, id, { detail: null });
+          enrich(user, item);
+          return send(res, 202, { ok: true });
+        }
+        if (req.method === "GET") {
+          const item = await store.cartGet(user.id, id);
+          return item ? send(res, 200, { item, tailored: await store.tailoredGet(user.id, id) }) : send(res, 404, { error: "Not found" });
+        }
+        if (req.method === "PATCH") {
+          const b = await readBody(req);
+          const patch = {};
+          if (CART_STATUSES.includes(b.status)) patch.status = b.status;
+          if (Array.isArray(b.done)) patch.done = b.done.slice(0, 50).map((x) => clip(x, 40));
+          const item = await store.cartUpdate(user.id, id, patch);
+          return item ? send(res, 200, { item }) : send(res, 404, { error: "Not found" });
+        }
+        if (req.method === "DELETE") {
+          await store.cartRemove(user.id, id);
+          return send(res, 200, { ok: true });
+        }
+      }
+
+      // ---------------- calendar subscription feed ----------------
+      if (url === "/api/calendar" && req.method === "GET") {
+        const user = await guard(req);
+        const token = await store.calToken(user.id);
+        const base = publicBase(req);
+        const feed = `${base}/cal/${token}.ics`;
+        const webcal = feed.replace(/^https?:/, "webcal:");
+        return send(res, 200, { feed, webcal, google: "https://calendar.google.com/calendar/r?cid=" + encodeURIComponent(webcal), publicHost: !/localhost|127\.0\.0\.1/.test(base) });
+      }
+      const calm = url.match(/^\/cal\/([A-Za-z0-9_-]+)\.ics$/);
+      if (calm) {
+        const uid = await store.uidForToken(calm[1]);
+        if (!uid) { res.writeHead(404); return res.end("not found"); }
+        res.writeHead(200, { "Content-Type": "text/calendar; charset=utf-8", "Cache-Control": "no-cache" });
+        return res.end(ics(await store.cartList(uid), "Bulldog Reach"));
+      }
+
+      // ---------------- resume: onboarding + tailoring ----------------
+      if (url === "/api/resume" && req.method === "GET") {
+        const user = await guard(req);
+        return send(res, 200, { resume: await store.resumeGet(user.id) });
+      }
+      if (url === "/api/resume/parse" && req.method === "POST") {
+        const user = await guard(req);
+        const b = await readBody(req);
+        const resumeText = clip(b.resume_text, 30000), linkedinText = clip(b.linkedin_text, 30000);
+        if (resumeText.length < 80 && linkedinText.length < 80) return send(res, 400, { error: "We couldn't read enough text from your files. Try a different PDF/DOCX." });
+        await bump(user, "parse");
+        const base = DEMO ? demoResume() : await grokPlain(RESUME_PARSE_SYSTEM, `RESUME TEXT:\n${resumeText || "(none)"}\n\nLINKEDIN EXPORT TEXT:\n${linkedinText || "(none)"}`);
+        const saved = await store.resumeSave(user.id, { base: normalizeResume(base), linkedin_url: clip(b.linkedin_url, 300), source_names: (b.source_names || []).slice(0, 4).map((s) => clip(s, 120)) });
+        return send(res, 200, { resume: saved });
+      }
+      if (url === "/api/resume" && req.method === "PUT") {
+        const user = await guard(req);
+        const b = await readBody(req);
+        if (!b.base || typeof b.base !== "object") return send(res, 400, { error: "Bad resume" });
+        return send(res, 200, { resume: await store.resumeSave(user.id, { base: normalizeResume(b.base) }) });
+      }
+      const tm = url.match(/^\/api\/tailor\/([^/]+)$/);
+      if (tm) {
+        const user = await guard(req);
+        const item = await store.cartGet(user.id, tm[1]);
+        if (!item) return send(res, 404, { error: "Not found" });
+        if (req.method === "GET") return send(res, 200, { tailored: await store.tailoredGet(user.id, item.id) });
+        if (req.method === "POST") {
+          // Generate SUGGESTIONS only. The resume itself is unchanged until the student accepts edits.
+          const r = await store.resumeGet(user.id);
+          if (!r?.base) return send(res, 400, { error: "Upload your resume first." });
+          await bump(user, "tailor");
+          const existing = await store.tailoredGet(user.id, item.id);
+          const current = existing?.resume || r.base;
+          const out = DEMO ? demoTailor(current) : await grokPlain(TAILOR_SYSTEM, `TARGET OPPORTUNITY:\n${JSON.stringify(item.opp)}\n\nWHAT THEY LOOK FOR:\n${JSON.stringify({ summary: item.detail?.summary, eligibility: item.detail?.eligibility, keywords: item.detail?.keywords })}\n\nRESUME (JSON):\n${JSON.stringify(current)}`);
+          // Flag words a suggestion introduces that appear nowhere in the student's resume, so they can check for embellishment.
+          const vocab = new Set(JSON.stringify(current).toLowerCase().match(/[a-z][a-z+#.-]{2,}/g) || []);
+          const STOP = new Set("the and for with from into that this your their using used use across based while within via per who what when where which over under onto than then also more most such each both".split(" "));
+          const newTerms = (txt) => [...new Set((String(txt || "").replace(/\[[^\]]*\]/g, "").toLowerCase().match(/[a-z][a-z+#.-]{2,}/g) || []).filter((w) => !vocab.has(w) && !STOP.has(w) && !vocab.has(w.replace(/(ed|ing|s)$/, ""))))].slice(0, 8);
+          const suggestions = (out.suggestions || []).slice(0, 16).map((s, i) => ({
+            id: `s${Date.now().toString(36)}${i}`, kind: clip(s.kind, 30), target: s.target || {}, before: clip(s.before, 500), after: clip(s.after, 500),
+            order: Array.isArray(s.order) ? s.order.slice(0, 30).map((x) => clip(x, 40)) : [], reason: clip(s.reason, 300), needs_input: !!s.needs_input || /\[[^\]]+\]/.test(s.after || ""),
+            new_terms: ["rewrite_bullet", "edit_summary"].includes(s.kind) ? newTerms(s.after) : [],
+          }));
+          const saved = await store.tailoredSave(user.id, item.id, { resume: current, suggestions, decisions: {}, fit_notes: clip(out.fit_notes, 600), keywords: (out.keywords || []).slice(0, 20) });
+          return send(res, 200, { tailored: saved });
+        }
+        if (req.method === "PUT") {
+          // Student-approved state: their edited resume + which suggestions they accepted/rejected.
+          const b = await readBody(req);
+          if (!b.resume || typeof b.resume !== "object") return send(res, 400, { error: "Bad resume" });
+          const decisions = Object.fromEntries(Object.entries(b.decisions || {}).filter(([, v]) => ["accepted", "rejected"].includes(v)).slice(0, 60));
+          return send(res, 200, { tailored: await store.tailoredSave(user.id, item.id, { resume: normalizeResume(b.resume), decisions }) });
+        }
       }
     } catch (e) {
       if (!(e instanceof HttpError)) console.error(e);

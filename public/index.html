@@ -171,6 +171,74 @@
   .tracksum{font-size:14px;font-weight:600;color:rgba(255,255,255,.6)}
   .foot{padding:28px 0 40px;font-size:13px;color:rgba(255,255,255,.35);background:#0E0806}
   .foot a{color:rgba(255,255,255,.55)}
+  /* v2: list, detail, onboarding, resume workspace */
+  .badge{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;margin-left:6px;border-radius:99px;background:var(--green);color:#0E0806;font-size:12px}
+  .badge:empty{display:none}
+  .smallbtn{height:40px;padding:0 16px;border-radius:99px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;text-decoration:none;white-space:nowrap}
+  .row3{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .onboard{margin-top:28px;padding:32px;border-radius:28px;background:linear-gradient(135deg,rgba(242,178,102,.14),rgba(255,255,255,.05));border:1px solid rgba(242,178,102,.3)}
+  .onboard h3{font-size:30px;letter-spacing:-.02em;margin:0 0 8px}
+  .onbgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .drop{display:flex;flex-direction:column;gap:6px;padding:20px;border-radius:20px;border:1.5px dashed rgba(255,255,255,.25);background:rgba(0,0,0,.2);cursor:pointer}
+  .drop span{font-size:13px;color:var(--mute)}
+  .drop input{font:inherit;font-size:13px;color:#fff;margin-top:6px}
+  .linput{grid-column:1/-1;height:56px;padding:0 20px;border-radius:16px;background:rgba(0,0,0,.25);border:1px solid var(--stroke)}
+  .listsec{background:#120A05;padding:80px 0;border-top:1px solid var(--stroke)}
+  .listrows{display:flex;flex-direction:column;gap:10px}
+  .lrow{display:grid;grid-template-columns:36px 1fr 140px 160px 130px;gap:18px;align-items:center;padding:18px 22px;border-radius:20px;background:var(--glass);border:1px solid var(--stroke);cursor:pointer;transition:background .15s}
+  .lrow:hover{background:rgba(255,255,255,.11)}
+  .lrow.dim{opacity:.45}
+  .lrank{font-size:22px;font-weight:700;color:rgba(255,255,255,.35)}
+  .ltitle{font-size:18px;font-weight:700;letter-spacing:-.01em}
+  .lorg{font-size:14px;color:var(--mute)}.lyt{color:var(--amber)}
+  .lnext{font-size:13px;color:#FFE27A;margin-top:4px}
+  .ldl{font-size:18px;font-weight:700;display:flex;flex-direction:column}.ldl small{font-size:12px;font-weight:500;color:var(--mute)}
+  .ldl.urgent{color:var(--red)}
+  .lprog small{font-size:12px;color:var(--mute)}
+  .pill{font-size:12px;font-weight:700;padding:6px 12px;border-radius:99px;background:rgba(255,255,255,.1)}
+  .pill.s-applying{background:rgba(10,132,255,.2)}.pill.s-submitted,.pill.s-interview{background:rgba(52,199,89,.2)}.pill.s-offer{background:var(--green);color:#0E0806}
+  .spin{display:inline-block;width:12px;height:12px;border-radius:50%;border:2px solid var(--green);border-top-color:transparent;animation:spin .8s linear infinite;vertical-align:-1px;margin-right:6px}
+  .sheet.wide{width:min(760px,100%)}
+  .dh{font-size:20px;margin:28px 0 12px;letter-spacing:-.01em}
+  .evlist,.cl{display:flex;flex-direction:column;gap:8px}
+  .ev{display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:center;padding:12px 14px;border-radius:16px;background:var(--glass);border:1px solid var(--stroke)}
+  .ev small{display:block;font-size:12.5px;color:var(--mute)}.evk{font-size:20px}
+  .cl .task{padding:14px 16px}.cl .task em{margin-left:auto;font-style:normal;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.35)}
+  .na{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-weight:500}
+  .dm{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+  .rw{position:fixed;inset:0;z-index:60;background:#0E0806;display:flex;flex-direction:column}
+  .rw[hidden]{display:none}
+  .rwbar{display:flex;justify-content:space-between;align-items:center;padding:16px 28px;border-bottom:1px solid var(--stroke)}
+  .rwtitle{font-size:22px;font-weight:700;letter-spacing:-.01em}
+  .rwgrid{flex:1;display:grid;grid-template-columns:1fr 400px;min-height:0}
+  .rwdoc{overflow:auto;padding:36px;background:#2A1D14}
+  .rwside{overflow:auto;padding:24px;border-left:1px solid var(--stroke);display:flex;flex-direction:column;gap:12px}
+  .paper{background:#fff;color:#111;max-width:8.5in;margin:0 auto;padding:.6in .75in;box-shadow:0 20px 50px rgba(0,0,0,.4);font:14px/1.38 "Times New Roman",Times,serif;min-height:11in}
+  .paper .rname{font-size:26px;text-align:center;margin:0;font-weight:700}
+  .paper .rcontact{text-align:center;font-size:13px;margin:2px 0 10px}
+  .paper .rsum{margin:0 0 8px}
+  .paper .rsec{font-size:14px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #111;margin:14px 0 6px;padding-bottom:1px}
+  .paper .ritem{position:relative;margin-bottom:8px}
+  .paper .rh,.paper .rs{display:flex;justify-content:space-between;gap:12px}
+  .paper .b{font-weight:700}.paper .i{font-style:italic}
+  .paper ul{margin:2px 0 0 20px;padding:0}.paper li{margin-bottom:2px}
+  .paper [contenteditable]{outline:none;border-radius:3px;min-width:12px;display:inline-block}
+  .paper [contenteditable]:hover{background:#FFF4D6}.paper [contenteditable]:focus{background:#FFF1C2;box-shadow:0 0 0 2px #F5C48C}
+  .paper [contenteditable]:empty::before{content:"(click to add)";color:#aaa}
+  .paper mark{background:#FFE27A;padding:0 2px}
+  .paper .rhidden{opacity:.35}
+  .rtoggle{position:absolute;right:-64px;top:0;font:600 11px Inter;color:#999;background:none;border:0;cursor:pointer}
+  .rtoggle:hover{color:#E0245E}
+  .sug{padding:16px;border-radius:16px;background:var(--glass);border:1px solid var(--stroke);display:flex;flex-direction:column;gap:8px}
+  .sug.accepted{border-color:rgba(52,199,89,.5);background:rgba(52,199,89,.08)}.sug.rejected{opacity:.45}
+  .sugk{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.5)}
+  .sugb{font-size:14px;color:rgba(255,255,255,.5);text-decoration:line-through}
+  .suga{font-size:14px;color:#fff}.suga mark{background:rgba(255,226,122,.3);color:#FFE27A;padding:0 2px;border-radius:3px}
+  .sugd{font-size:13px;font-weight:600;color:#9BEDB3}
+  .newt{font-size:12.5px;padding:8px 10px;border-radius:10px;background:rgba(255,107,91,.12);color:#FFB4A9}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,40px);opacity:0;z-index:80;padding:14px 22px;border-radius:16px;background:#fff;color:#111;font-weight:600;box-shadow:0 20px 40px rgba(0,0,0,.4);transition:.25s;pointer-events:none}
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+  @media(max-width:1100px){.lrow{grid-template-columns:28px 1fr;}.ldl,.lprog,.lstat{grid-column:2}.rwgrid{grid-template-columns:1fr}.rwside{border-left:0;border-top:1px solid var(--stroke)}.onbgrid{grid-template-columns:1fr}.rtoggle{right:0;top:-16px}}
   .banner{margin-top:40px;padding:14px 20px;border-radius:16px;background:rgba(255,214,10,.12);color:#FFE27A;font-weight:500;font-size:14px}
   .rtop{display:flex;justify-content:space-between;align-items:center;padding-top:48px}
   .goalpill{display:flex;gap:10px;font-size:15px;font-weight:600;padding:14px 22px;border-radius:99px;background:rgba(255,255,255,.1);border:1px solid var(--stroke)}
@@ -225,7 +293,7 @@
   <div class="wrap">
     <nav>
       <div class="brand"><span class="logo">B_</span><span class="seen">as seen at y/cs × SpaceXSI Grokathon</span></div>
-      <div class="navr"><span id="status" class="status"><i></i>connecting…</span><span id="usage" class="usage"></span><span id="me" class="me"></span><a href="#build" class="pillbtn whitebtn">Get started</a></div>
+      <div class="navr"><span id="status" class="status"><i></i>connecting…</span><span id="usage" class="usage"></span><button class="glassbtn mebtn" onclick="document.getElementById('list').hidden ? toast('Swipe right on opportunities to add them to your list') : document.getElementById('list').scrollIntoView({behavior:'smooth'})">My list <b id="cartcount" class="badge"></b></button><button class="glassbtn mebtn" id="resumebtn" onclick="openResume()">Add resume</button><span id="me" class="me"></span><a href="#build" class="pillbtn whitebtn">Get started</a></div>
     </nav>
     <div class="herogrid">
       <div>
@@ -267,6 +335,17 @@
       </form>
       <div id="autherr" class="err" style="margin-top:10px"></div>
     </div>
+    <form id="onboard" class="onboard" hidden onsubmit="submitOnboarding(event)">
+      <div class="k">Start here · 1 minute</div>
+      <h3>Your LinkedIn and your resume. That’s it.</h3>
+      <p class="why" style="font-size:15px;margin:0 0 18px">Grok reads them once, then tailors a resume for every opportunity you save. It only ever <b style="color:#fff">suggests</b> edits — nothing changes or gets sent without your OK.</p>
+      <div class="onbgrid">
+        <label class="drop"><b>Resume</b><span>PDF or Word (.docx)</span><input id="rfile" type="file" accept=".pdf,.docx,.txt" /></label>
+        <label class="drop"><b>LinkedIn profile PDF</b><span>Optional · LinkedIn → your profile → More → “Save to PDF”</span><input id="lfile" type="file" accept=".pdf" /></label>
+        <input id="lurl" class="linput" type="url" placeholder="linkedin.com/in/your-name (optional)" />
+      </div>
+      <div class="go" style="margin-top:16px"><span id="onberr" class="err"></span><button type="button" class="linkbtn" onclick="skipOnboarding()">Skip for now</button><button class="cta" id="onbbtn">Read my resume →</button></div>
+    </form>
     <form id="f" class="formgrid">
       <div class="field goal">
         <label>My goal</label>
@@ -298,7 +377,7 @@
     <div>
       <div class="k">Step two · swipe</div>
       <h2>Which of these do<br/>you actually want?</h2>
-      <p class="lede" style="font-size:18px;margin-top:16px">Swipe right on what excites you, left on what doesn’t. Grok aims your outreach at your picks and puts their deadlines on your calendar.</p>
+      <p class="lede" style="font-size:18px;margin-top:16px">Swipe right to save it to your list. Grok then finds its deadlines, info sessions and office hours, builds an application checklist, and puts the dates on your calendar.</p>
       <div class="likes" id="likes"></div>
       <div class="deckcta">
         <button class="cta" id="planbtn" disabled>Build my plan →</button>
@@ -316,6 +395,14 @@
   </div>
 </section>
 
+<section id="list" class="listsec" hidden>
+  <div class="wrap">
+    <div class="sh" style="margin-top:0"><div><div class="k">Your list · by priority</div><h2>Focus on these.</h2></div>
+      <button class="cta" style="width:auto;height:52px;padding:0 22px;font-size:16px;border-radius:14px" onclick="openCalendar()">📅 Sync to Google Calendar</button></div>
+    <div id="listrows" class="listrows"></div>
+  </div>
+</section>
+
 <section id="out"></section>
 
 <div id="history" class="modal" hidden onclick="if(event.target===this)this.hidden=true">
@@ -324,6 +411,24 @@
     <div id="histlist" class="histlist"></div>
   </div>
 </div>
+
+<div id="item" class="modal" hidden onclick="if(event.target===this){this.hidden=true;CART.open=null}">
+  <div class="sheet wide"><div class="sheethead"><span></span><button class="linkbtn" onclick="$('#item').hidden=true;CART.open=null">Close</button></div><div id="itembody"></div></div>
+</div>
+<div id="calmodal" class="modal" hidden onclick="if(event.target===this)this.hidden=true">
+  <div class="sheet"><div class="sheethead"><h2 style="font-size:30px">Calendar sync</h2><button class="linkbtn" onclick="$('#calmodal').hidden=true">Close</button></div><div id="calbody"></div></div>
+</div>
+<div id="rw" class="rw" hidden>
+  <div class="rwbar">
+    <div><div class="k" style="margin:0">Resume</div><div id="rwtitle" class="rwtitle"></div></div>
+    <div class="row3"><span id="rwsave" class="why">Saved ✓</span>
+      <button class="glassbtn smallbtn" onclick="downloadDocx()">Download Word</button>
+      <button class="whitebtn smallbtn" onclick="downloadPdf()">Download PDF</button>
+      <button class="linkbtn" onclick="$('#rw').hidden=true">Close</button></div>
+  </div>
+  <div class="rwgrid"><div id="rwdoc" class="rwdoc"></div><aside id="rwside" class="rwside"></aside></div>
+</div>
+<div id="toast" class="toast"></div>
 
 <footer class="foot"><div class="wrap">Bulldog Reach beta · Hooks come from public posts and link to their source. Reply odds are Grok estimates. Want to be excluded from suggestions? Email <a href="mailto:david.frumgarzts@yale.edu">david.frumgarzts@yale.edu</a>.</div></footer>
 
@@ -338,7 +443,7 @@ let lastPeople = [];
 const AUTH = { on: false, sb: null, session: null, domain: "yale.edu", limits: {} };
 const token = () => AUTH.session?.access_token;
 
-(async function boot() {
+async function boot() {
   const cfg = await fetch("/api/config").then((r) => r.json());
   const el = $("#status");
   el.innerHTML = `<i></i>${cfg.demo ? "demo mode" : "Grok live"}`;
@@ -351,7 +456,8 @@ const token = () => AUTH.session?.access_token;
   AUTH.session = data.session;
   AUTH.sb.auth.onAuthStateChange((_e, session) => { AUTH.session = session; paintAuth(); });
   paintAuth();
-})();
+}
+window.addEventListener("DOMContentLoaded", boot);
 
 function paintAuth() {
   const signedIn = !AUTH.on || !!AUTH.session;
@@ -362,6 +468,7 @@ function paintAuth() {
     ? `<button class="glassbtn mebtn" onclick="openHistory()">My plans</button><span class="meemail">${esc(email)}</span><button class="linkbtn" style="font-size:14px" onclick="signOut()">Sign out</button>`
     : AUTH.on ? `<a href="#build" class="glassbtn mebtn" style="text-decoration:none">Sign in</a>` : "";
   if (AUTH.on && email) loadHistory();
+  if (signedIn) { loadCart(); loadResume(); }
 }
 
 $("#authform").onsubmit = async (e) => {
@@ -528,7 +635,7 @@ function swipe(like) {
   const card = $('#stack .oc[data-i="0"]');
   if (!card || !S.deck.length) return;
   const o = S.deck.shift();
-  if (like) S.liked.push(o);
+  if (like) { S.liked.push(o); addToCart(o); }
   card.style.transform = `translate(${like ? 600 : -600}px, -40px) rotate(${like ? 30 : -30}deg)`;
   card.style.opacity = 0;
   card.querySelector(like ? ".stamp.y" : ".stamp.n").style.opacity = 1;
@@ -734,5 +841,7 @@ function copy(i, btn) {
   setTimeout(() => (btn.textContent = "Copy message"), 1400);
 }
 </script>
+<script src="/cart.js"></script>
+<script src="/resume.js"></script>
 </body>
 </html>

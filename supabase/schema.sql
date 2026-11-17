@@ -49,3 +49,54 @@ begin
 end $$;
 
 revoke all on function public.bump_usage(uuid, text, int, int) from public, anon, authenticated;
+
+-- Only the server (service_role) gets access. Browsers (anon/authenticated) get nothing.
+grant usage on schema public to service_role;
+grant select, insert, update, delete on public.plans, public.outreach, public.usage to service_role;
+grant execute on function public.bump_usage(uuid, text, int, int) to service_role;
+revoke all on public.plans, public.outreach, public.usage from anon, authenticated;
+
+-- ---------- v2: cart, calendar feed, resumes, tailoring ----------
+create table if not exists public.cart_items (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users on delete cascade,
+  opp         jsonb not null,
+  detail      jsonb,
+  status      text not null default 'saved' check (status in ('saved','applying','submitted','interview','offer','dropped')),
+  done        jsonb not null default '[]'::jsonb,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+create index if not exists cart_user_created on public.cart_items (user_id, created_at desc);
+
+create table if not exists public.cal_tokens (
+  user_id  uuid primary key references auth.users on delete cascade,
+  token    text not null unique
+);
+
+create table if not exists public.resumes (
+  user_id       uuid primary key references auth.users on delete cascade,
+  base          jsonb,
+  linkedin_url  text,
+  source_names  jsonb,
+  updated_at    timestamptz not null default now()
+);
+
+create table if not exists public.tailored (
+  user_id      uuid not null references auth.users on delete cascade,
+  cart_id      uuid not null references public.cart_items on delete cascade,
+  resume       jsonb,
+  suggestions  jsonb,
+  decisions    jsonb,
+  fit_notes    text,
+  keywords     jsonb,
+  updated_at   timestamptz not null default now(),
+  primary key (user_id, cart_id)
+);
+
+alter table public.cart_items enable row level security;
+alter table public.cal_tokens enable row level security;
+alter table public.resumes    enable row level security;
+alter table public.tailored   enable row level security;
+grant select, insert, update, delete on public.cart_items, public.cal_tokens, public.resumes, public.tailored to service_role;
+revoke all on public.cart_items, public.cal_tokens, public.resumes, public.tailored from anon, authenticated;
