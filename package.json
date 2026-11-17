@@ -1,0 +1,16 @@
+{
+  "name": "bulldog-reach",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Goal-first outreach for Yale students, powered by Claude with live web search.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.10.0"
+  }
+}

@@ -1,5 +1,5 @@
-// Bulldog Reach — goal-first outreach for Yale students, powered by Grok.
-// Zero dependencies: `node server.js` then open http://localhost:3000
+// Bulldog Reach — goal-first outreach for Yale students, powered by Claude.
+// One dependency (the Anthropic SDK): `npm install`, `node server.js`, then open http://localhost:3000
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
@@ -14,9 +14,14 @@ if (fs.existsSync(envPath)) {
 }
 
 const PORT = process.env.PORT || 3000;
-const API_KEY = process.env.XAI_API_KEY || "";
-const MODEL = process.env.GROK_MODEL || "grok-4.20-0309-non-reasoning";
+const Anthropic = require("@anthropic-ai/sdk");
+const API_KEY = process.env.ANTHROPIC_API_KEY || "";
+const MODEL = process.env.CLAUDE_MODEL || "claude-opus-5-5";
+const EFFORT = process.env.REACH_EFFORT || "low"; // low | medium | high — higher is more thorough and slower
 const DEMO = !API_KEY || process.env.DEMO_MODE === "1";
+const claude = DEMO ? null : new Anthropic({ apiKey: API_KEY, maxRetries: 1 });
+// If a model declines a request, the API can re-run it on a fallback model in the same call (these models only).
+const FALLBACKS = /^claude-(fable-5-[12]|opus-5|sonnet-5-5)/.test(MODEL);
 const today = () => new Date().toISOString().slice(0, 10);
 
 const PLAN_SYSTEM = `You are Bulldog Reach, an outreach strategist for Yale students.
@@ -60,7 +65,7 @@ Return ONLY JSON:
    "yale_tie": string, "fit": number          // 0-100 fit for this student
 } ] }`;
 
-const DETAIL_SYSTEM = `You help a Yale student apply to ONE specific opportunity. Research it (official page, Yale OCS, employer events, X posts) and return what they need to act.
+const DETAIL_SYSTEM = `You help a Yale student apply to ONE specific opportunity. Research it (official page, Yale OCS, employer events, public posts) and return what they need to act.
 Rules:
 - events: real upcoming dates only (after today): application deadline(s), info sessions, office hours, employer/Yale OCS events, networking events, recruiter coffee chats. date YYYY-MM-DD or null if unknown; set verified=true only if you saw the date on an official/primary source and include its url.
 - checklist: 5-9 concrete, ordered steps to submit a strong application (materials, essays, recommenders, outreach, prep). Short imperative text.
@@ -107,64 +112,68 @@ Return 6-14 high-impact suggestions, most important first. Return ONLY JSON:
 { "fit_notes": string, "keywords": [string],
   "suggestions": [ { "id": string, "kind": string, "target": object, "before": string, "after": string, "order": [string], "reason": string, "needs_input": boolean } ] }`;
 
-async function post(url, body, ms) {
-  const r = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${API_KEY}` },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(ms),
-  });
-  const text = await r.text();
-  if (!r.ok) throw Object.assign(new Error(`xAI ${r.status}: ${text.slice(0, 300)}`), { status: r.status });
-  return JSON.parse(text);
-}
 const parseJSON = (s) => {
   const m = String(s || "").match(/\{[\s\S]*\}/);
   return JSON.parse(m ? m[0] : s);
 };
 
-// Ask Grok for JSON, with live X + web search (Agent Tools API); fall back to plain chat if search fails.
-async function grokJSON(system, user, searchHint) {
+// One Claude request. Returns the final answer text and how many web searches ran.
+async function ask(system, user, { tools, ms }) {
+  const messages = [{ role: "user", content: user }];
+  let searches = 0;
+  for (let turn = 0; ; turn++) {
+    const res = await claude.beta.messages.create({
+      model: MODEL,
+      max_tokens: 16000,
+      output_config: { effort: EFFORT },
+      ...(FALLBACKS ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" } : {}),
+      system,
+      messages,
+      ...(tools ? { tools } : {}),
+    }, { timeout: ms });
+    searches += res.content.filter((c) => c.type === "server_tool_use" && c.name === "web_search").length;
+    // A long search turn can pause; sending it back as-is makes the server resume it.
+    if (res.stop_reason === "pause_turn" && turn < 3) {
+      messages.push({ role: "assistant", content: res.content });
+      continue;
+    }
+    if (res.stop_reason === "refusal") throw new Error("Claude declined this request.");
+    if (res.stop_reason === "max_tokens") throw new Error("Claude's answer was cut off before it finished.");
+    // The answer is the text after the last search result; earlier text is commentary between searches.
+    let text = [];
+    for (const c of res.content) {
+      if (c.type === "text") text.push(c.text);
+      else if (c.type === "server_tool_use" || /tool_result$/.test(c.type)) text = [];
+    }
+    return { text: text.join(""), searches, model: res.model || MODEL };
+  }
+}
+
+// Ask Claude for JSON with live web search; fall back to a plain call if search fails.
+async function claudeJSON(system, user, searchHint) {
   const sys = `${system}\n\nToday is ${today()}.`;
   try {
-    const data = await post("https://api.x.ai/v1/responses", {
-      model: MODEL,
-      input: [
-        { role: "system", content: `${sys}\n\n${searchHint} Keep it to a few searches. Output the JSON object only.` },
-        { role: "user", content: user },
-      ],
-      tools: [{ type: "x_search" }, { type: "web_search" }],
-    }, 75000);
-    const msg = (data.output || []).filter((o) => o.type === "message").pop();
-    const text = (msg?.content || []).map((c) => c.text || "").join("");
-    const searches = (data.output || []).filter((o) => /search/.test(o.type) || /search/.test(o.name || "")).length;
-    const json = parseJSON(text);
-    json._meta = { model: data.model || MODEL, live_search: searches > 0, searches, demo: false };
+    const out = await ask(`${sys}\n\n${searchHint} Keep it to a few searches. Output the JSON object only.`, user, {
+      tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 6 }],
+      ms: 150000,
+    });
+    const json = parseJSON(out.text);
+    json._meta = { model: out.model, live_search: out.searches > 0, searches: out.searches, demo: false };
     return json;
   } catch (e) {
-    if (e.status === 401 || e.status === 403) throw e;
+    if (e instanceof Anthropic.AuthenticationError || e instanceof Anthropic.PermissionDeniedError) throw e;
     console.error("live search failed, falling back:", e.message);
-    const data = await post("https://api.x.ai/v1/chat/completions", {
-      model: MODEL,
-      temperature: 0.4,
-      response_format: { type: "json_object" },
-      messages: [{ role: "system", content: sys }, { role: "user", content: user }],
-    }, 60000);
-    const json = parseJSON(data.choices?.[0]?.message?.content);
-    json._meta = { model: data.model || MODEL, live_search: false, demo: false };
+    const out = await ask(`${sys}\n\nOutput the JSON object only.`, user, { ms: 90000 });
+    const json = parseJSON(out.text);
+    json._meta = { model: out.model, live_search: false, demo: false };
     return json;
   }
 }
 
 // Plain JSON call, no search (resume parsing / tailoring work only on what the student gave us).
-async function grokPlain(system, user, ms = 90000) {
-  const data = await post("https://api.x.ai/v1/chat/completions", {
-    model: MODEL,
-    temperature: 0.2,
-    response_format: { type: "json_object" },
-    messages: [{ role: "system", content: `${system}\n\nToday is ${today()}.` }, { role: "user", content: user }],
-  }, ms);
-  return parseJSON(data.choices?.[0]?.message?.content);
+async function claudePlain(system, user, ms = 120000) {
+  const out = await ask(`${system}\n\nToday is ${today()}. Output the JSON object only.`, user, { ms });
+  return parseJSON(out.text);
 }
 
 function planPrompt({ goal, about, profiles, liked }) {
@@ -221,7 +230,7 @@ const LIMITS = {
   tailor: +process.env.DAILY_TAILOR_LIMIT || 20,
   parse: +process.env.DAILY_PARSE_LIMIT || 6,
 };
-const MONTHLY_CAP = +process.env.MONTHLY_CALL_CAP || 3000; // total Grok calls across all users per month
+const MONTHLY_CAP = +process.env.MONTHLY_CALL_CAP || 3000; // total Claude calls across all users per month
 const STATUSES = ["todo", "sent", "replied", "meeting", "referred", "no_reply"];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -319,7 +328,7 @@ function publicBase(req) {
 async function enrich(user, item) {
   try {
     await bump(user, "detail");
-    const detail = DEMO ? demoDetail(item.opp) : await grokJSON(DETAIL_SYSTEM, `OPPORTUNITY:\n${JSON.stringify(item.opp)}`, "Use web_search (official page, ocs.yale.edu, events.yale.edu) and x_search to find real deadlines, info sessions, and contacts.");
+    const detail = DEMO ? demoDetail(item.opp) : await claudeJSON(DETAIL_SYSTEM, `OPPORTUNITY:\n${JSON.stringify(item.opp)}`, "Use web_search (official page, ocs.yale.edu, events.yale.edu) to find real deadlines, info sessions, and contacts.");
     const safeUrl = (u) => (/^https?:\/\//.test(u || "") ? clip(u, 500) : "");
     const KINDS = ["deadline", "info_session", "office_hours", "event", "coffee_chat"];
     detail.events = (detail.events || []).filter((e) => e && e.title).slice(0, 12).map((e) => ({
@@ -395,7 +404,7 @@ http
         if (!b.goal) return send(res, 400, { error: "Tell us your goal first." });
         const input = { goal: clip(b.goal, 300), about: clip(b.about, 1500), profiles: clip(b.profiles, 12000), liked: (Array.isArray(b.liked) ? b.liked : []).slice(0, 12) };
         const usage = await bump(user, "plan");
-        const plan = DEMO ? demoPlan(input.goal) : await grokJSON(PLAN_SYSTEM, planPrompt(input), "Use x_search and web_search to find real, recent posts for hooks. Hook sources should include the post URL when you have one.");
+        const plan = DEMO ? demoPlan(input.goal) : await claudeJSON(PLAN_SYSTEM, planPrompt(input), "Use web_search to find real, recent public posts, articles or news for hooks. Hook sources should include the post URL when you have one.");
         if (AUTH) {
           const [row] = await sb("plans", { method: "POST", prefer: "return=representation", body: { user_id: user.id, goal: input.goal, liked: input.liked, data: plan } });
           plan._id = row.id;
@@ -410,7 +419,7 @@ http
         const usage = await bump(user, "deck");
         if (DEMO) return send(res, 200, { ...demoOpps(), _usage: usage });
         const prompt = `GOAL: ${clip(b.goal, 300)}\n\nABOUT ME: ${clip(b.about, 1500) || "(not given)"}\n\nALREADY SEEN (don't repeat): ${(Array.isArray(b.seen) ? b.seen : []).slice(0, 40).map((s) => clip(s, 120)).join("; ") || "(none)"}`;
-        const d = await grokJSON(OPPS_SYSTEM, prompt, "Use web_search (and x_search for fresh hiring posts) to find real openings with real URLs and deadlines.");
+        const d = await claudeJSON(OPPS_SYSTEM, prompt, "Use web_search to find real openings with real URLs and deadlines.");
         d._usage = usage;
         return send(res, 200, d);
       }
@@ -512,7 +521,7 @@ http
         const resumeText = clip(b.resume_text, 30000), linkedinText = clip(b.linkedin_text, 30000);
         if (resumeText.length < 80 && linkedinText.length < 80) return send(res, 400, { error: "We couldn't read enough text from your files. Try a different PDF/DOCX." });
         await bump(user, "parse");
-        const base = DEMO ? demoResume() : await grokPlain(RESUME_PARSE_SYSTEM, `RESUME TEXT:\n${resumeText || "(none)"}\n\nLINKEDIN EXPORT TEXT:\n${linkedinText || "(none)"}`);
+        const base = DEMO ? demoResume() : await claudePlain(RESUME_PARSE_SYSTEM, `RESUME TEXT:\n${resumeText || "(none)"}\n\nLINKEDIN EXPORT TEXT:\n${linkedinText || "(none)"}`);
         const saved = await store.resumeSave(user.id, { base: normalizeResume(base), linkedin_url: clip(b.linkedin_url, 300), source_names: (b.source_names || []).slice(0, 4).map((s) => clip(s, 120)) });
         return send(res, 200, { resume: saved });
       }
@@ -535,7 +544,7 @@ http
           await bump(user, "tailor");
           const existing = await store.tailoredGet(user.id, item.id);
           const current = existing?.resume || r.base;
-          const out = DEMO ? demoTailor(current) : await grokPlain(TAILOR_SYSTEM, `TARGET OPPORTUNITY:\n${JSON.stringify(item.opp)}\n\nWHAT THEY LOOK FOR:\n${JSON.stringify({ summary: item.detail?.summary, eligibility: item.detail?.eligibility, keywords: item.detail?.keywords })}\n\nRESUME (JSON):\n${JSON.stringify(current)}`);
+          const out = DEMO ? demoTailor(current) : await claudePlain(TAILOR_SYSTEM, `TARGET OPPORTUNITY:\n${JSON.stringify(item.opp)}\n\nWHAT THEY LOOK FOR:\n${JSON.stringify({ summary: item.detail?.summary, eligibility: item.detail?.eligibility, keywords: item.detail?.keywords })}\n\nRESUME (JSON):\n${JSON.stringify(current)}`);
           // Flag words a suggestion introduces that appear nowhere in the student's resume, so they can check for embellishment.
           const vocab = new Set(JSON.stringify(current).toLowerCase().match(/[a-z][a-z+#.-]{2,}/g) || []);
           const STOP = new Set("the and for with from into that this your their using used use across based while within via per who what when where which over under onto than then also more most such each both".split(" "));
@@ -569,4 +578,4 @@ http
     res.writeHead(200, { "Content-Type": types[path.extname(file)] || "application/octet-stream" });
     fs.createReadStream(file).pipe(res);
   })
-  .listen(PORT, () => console.log(`Bulldog Reach on http://localhost:${PORT}  (${DEMO ? "DEMO mode — add XAI_API_KEY to .env" : "model " + MODEL} · ${AUTH ? "Yale login ON" : "open mode, no login"})`));
+  .listen(PORT, () => console.log(`Bulldog Reach on http://localhost:${PORT}  (${DEMO ? "DEMO mode — add ANTHROPIC_API_KEY to .env" : "model " + MODEL} · ${AUTH ? "Yale login ON" : "open mode, no login"})`));

@@ -3,16 +3,16 @@ services:
     name: bulldog-reach
     runtime: node
     plan: free
-    buildCommand: "true"
+    buildCommand: npm install
     startCommand: node server.js
     healthCheckPath: /api/status
     envVars:
       - key: NODE_VERSION
         value: "22"
-      - key: XAI_API_KEY
+      - key: ANTHROPIC_API_KEY
         sync: false
-      - key: GROK_MODEL
-        value: grok-4.20-0309-non-reasoning
+      - key: CLAUDE_MODEL
+        value: claude-opus-5-5
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY

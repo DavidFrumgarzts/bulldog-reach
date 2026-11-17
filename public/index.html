@@ -299,7 +299,7 @@
     <div class="herogrid">
       <div>
         <h1>Get where<br/>you’re going.</h1>
-        <p class="lede">Tell Bulldog Reach your goal. Grok maps the path, finds the Yalies who can unlock it, and writes the one message that moves you forward.</p>
+        <p class="lede">Tell Bulldog Reach your goal. Claude maps the path, finds the Yalies who can unlock it, and writes the one message that moves you forward.</p>
         <a class="cta" href="#build">
           <svg width="30" height="30" viewBox="0 0 28 28"><rect width="28" height="28" rx="7" fill="#34C759"/><path d="M14 7c-4.4 0-8 2.9-8 6.5 0 2 1.1 3.8 2.9 5l-.7 2.8 3.1-1.6c.9.2 1.8.3 2.7.3 4.4 0 8-2.9 8-6.5S18.4 7 14 7z" fill="#fff"/></svg>
           Start my game plan</a>
@@ -341,7 +341,7 @@
     <form id="onboard" class="onboard" hidden onsubmit="submitOnboarding(event)">
       <div class="k">Start here · 1 minute</div>
       <h3>Your LinkedIn and your resume. That’s it.</h3>
-      <p class="why" style="font-size:15px;margin:0 0 18px">Grok reads them once, then tailors a resume for every opportunity you save. It only ever <b style="color:#fff">suggests</b> edits — nothing changes or gets sent without your OK.</p>
+      <p class="why" style="font-size:15px;margin:0 0 18px">Claude reads them once, then tailors a resume for every opportunity you save. It only ever <b style="color:#fff">suggests</b> edits — nothing changes or gets sent without your OK.</p>
       <div class="onbgrid">
         <label class="drop"><b>Resume</b><span>PDF or Word (.docx)</span><input id="rfile" type="file" accept=".pdf,.docx,.txt" /></label>
         <label class="drop"><b>LinkedIn profile PDF</b><span>Optional · LinkedIn → your profile → More → “Save to PDF”</span><input id="lfile" type="file" accept=".pdf" /></label>
@@ -362,7 +362,7 @@
       </div>
       <div class="field">
         <label>People to consider · optional — paste LinkedIn profiles, separate with ---</label>
-        <textarea id="profiles" placeholder="Leave empty and Grok will propose who to find."></textarea>
+        <textarea id="profiles" placeholder="Leave empty and Claude will propose who to find."></textarea>
       </div>
       <div class="field">
         <label>About me</label>
@@ -380,7 +380,7 @@
     <div>
       <div class="k">Step two · swipe</div>
       <h2>Which of these do<br/>you actually want?</h2>
-      <p class="lede" style="font-size:18px;margin-top:16px">Swipe right to save it to your list. Grok then finds its deadlines, info sessions and office hours, builds an application checklist, and puts the dates on your calendar.</p>
+      <p class="lede" style="font-size:18px;margin-top:16px">Swipe right to save it to your list. Claude then finds its deadlines, info sessions and office hours, builds an application checklist, and puts the dates on your calendar.</p>
       <div class="likes" id="likes"></div>
       <div class="deckcta">
         <button class="cta" id="planbtn" disabled>Build my plan →</button>
@@ -433,7 +433,7 @@
 </div>
 <div id="toast" class="toast"></div>
 
-<footer class="foot"><div class="wrap">Bulldog Reach beta · Hooks come from public posts and link to their source. Reply odds are Grok estimates. Want to be excluded from suggestions? Email <a href="mailto:david.frumgarzts@yale.edu">david.frumgarzts@yale.edu</a>.</div></footer>
+<footer class="foot"><div class="wrap">Bulldog Reach beta · Hooks come from public posts and link to their source. Reply odds are Claude estimates. Want to be excluded from suggestions? Email <a href="mailto:david.frumgarzts@yale.edu">david.frumgarzts@yale.edu</a>.</div></footer>
 
 <script>
 const $ = (s) => document.querySelector(s);
@@ -449,7 +449,7 @@ const token = () => AUTH.session?.access_token;
 async function boot() {
   const cfg = await fetch("/api/config").then((r) => r.json());
   const el = $("#status");
-  el.innerHTML = `<i></i>${cfg.demo ? "demo mode" : "Grok live"}`;
+  el.innerHTML = `<i></i>${cfg.demo ? "demo mode" : "Claude live"}`;
   if (!cfg.demo) el.classList.add("live");
   AUTH.on = cfg.auth; AUTH.emailCode = !!cfg.emailCode; AUTH.domain = cfg.domain; AUTH.limits = cfg.limits || {};
   if (!AUTH.on) return paintAuth();
@@ -619,7 +619,7 @@ $("#planbtn").onclick = () => buildPlan();
 async function loadDeck() {
   $("#btn").disabled = $("#more").disabled = true;
   $("#deck").hidden = false;
-  $("#stack").innerHTML = `<div class="empty"><div><p class="loading" style="padding:0"><i></i>Grok is searching for real openings…</p></div></div>`;
+  $("#stack").innerHTML = `<div class="empty"><div><p class="loading" style="padding:0"><i></i>Claude is searching for real openings…</p></div></div>`;
   renderLikes();
   window.scrollTo({ top: $("#deck").offsetTop, behavior: "smooth" });
   try {
@@ -627,7 +627,7 @@ async function loadDeck() {
     const fresh = (d.opportunities || []).filter((o) => o && o.title && !S.seen.includes(o.title));
     fresh.forEach((o) => {
       S.seen.push(o.title);
-      // Never put a past deadline on the calendar: Grok sometimes returns last cycle's date.
+      // Never put a past deadline on the calendar: Claude sometimes returns last cycle's date.
       if (o.deadline && (!/^\d{4}-\d{2}-\d{2}$/.test(o.deadline) || o.deadline < new Date().toISOString().slice(0, 10))) {
         o.deadline_note = /^\d{4}/.test(o.deadline) ? `Last cycle closed ${fmtDate(o.deadline)} — watch for the next one` : o.deadline_note || "Check the site";
         o.deadline = null;
@@ -728,7 +728,7 @@ async function buildPlan() {
   } catch (err) {
     stop();
     const last = (() => { try { return JSON.parse(localStorage.bb_last || "null"); } catch { return null; } })();
-    if (last) render(last.d, last.goal, `Grok didn’t answer this time (${err.message.slice(0, 80)}). Showing your last plan.`);
+    if (last) render(last.d, last.goal, `Claude didn’t answer this time (${err.message.slice(0, 80)}). Showing your last plan.`);
     else { $("#out").innerHTML = ""; $("#err").textContent = err.message; }
   } finally {
     $("#btn").disabled = $("#planbtn").disabled = false;
@@ -739,7 +739,7 @@ function showProgress() {
   const steps = ["Turning your goal into a north star", "Searching X for recent posts", "Searching the web for Yale ties", "Ranking people by fit × reply odds", "Drafting one message per person"];
   const at = [0, 2, 6, 10, 14]; // seconds each step lights up
   $("#out").innerHTML = `<div class="wrap prog">
-    <div class="k">Grok · live search</div>
+    <div class="k">Claude · live search</div>
     <h2>Building your game plan <span id="tick">0s</span></h2>
     <ul class="plist">${steps.map((s) => `<li><b></b>${esc(s)}</li>`).join("")}</ul></div>`;
   window.scrollTo({ top: $("#out").offsetTop - 20, behavior: "smooth" });
@@ -825,7 +825,7 @@ function render(d, goal, warning) {
     ${warning ? `<div class="banner">${esc(warning)}</div>` : ""}
     <div class="rtop">
       <div class="goalpill"><span>Goal</span>${esc(goal)}</div>
-      <span class="status ${live ? "live" : ""}"><i></i>${live ? "Grok" + (d._meta.live_search ? " · live X search" : "") : "demo data"}</span>
+      <span class="status ${live ? "live" : ""}"><i></i>${live ? "Claude" + (d._meta.live_search ? " · live web search" : "") : "demo data"}</span>
     </div>
     <div class="north"><div class="k">North star</div><div class="v">${esc(d.north_star)}</div></div>
     <div class="steps">${(d.game_plan || []).map((s, i) => `
@@ -882,7 +882,7 @@ function render(d, goal, warning) {
       <div class="allcal"><small>${eventsForPlan(d).length} reminders</small><button class="cta" style="width:auto;height:52px;padding:0 22px;font-size:16px;border-radius:14px" onclick="addAllCal()">📅 Add all to calendar (.ics)</button></div>
     </div>
     <div class="week">${(d.this_week || []).map((t) => `<label class="task"><input type="checkbox"><span>${esc(t)}</span></label>`).join("")}</div>
-    <div class="meta">${live ? "Generated by " + esc(d._meta.model) : "Demo data — add XAI_API_KEY to .env for live Grok"}${d._id ? " · saved to My plans" : ""}</div>
+    <div class="meta">${live ? "Generated by " + esc(d._meta.model) : "Demo data — add ANTHROPIC_API_KEY to .env for live Claude"}${d._id ? " · saved to My plans" : ""}</div>
   </div>`;
   if (Object.keys(S.outreach).length) paintTracker();
 }
