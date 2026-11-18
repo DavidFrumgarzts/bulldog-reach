@@ -18,6 +18,7 @@ function paintOnboarding() {
   if (has && !$("#about").value) $("#about").value = aboutFromResume(RS.resume.base);
 }
 function aboutFromResume(r) {
+  if (r.about) return r.about; // the short paragraph written when the resume was read
   const ed = r.education?.[0];
   const roles = (r.experience || []).slice(0, 3).map((e) => `${e.role} at ${e.org}`).join("; ");
   const skills = (r.skills || []).flatMap((s) => s.items).slice(0, 10).join(", ");
@@ -97,7 +98,7 @@ async function openTailor(cartId) {
   paintWorkspace();
 }
 async function generateSuggestions() {
-  $("#rwside").innerHTML = `<p class="loading"><i></i>Reading the opportunity and your resume… (~15s)</p>`;
+  $("#rwside").innerHTML = `<p class="loading"><i></i>Bulldog is reading the opportunity and your resume…</p>`;
   try {
     const { tailored } = await call("/api/tailor/" + RS.cartId, {});
     RS.tailored = tailored; RS.doc = structuredClone(tailored.resume);
@@ -117,7 +118,7 @@ function paintSide() {
   const side = $("#rwside");
   if (RS.mode === "base") {
     side.innerHTML = `<div class="k">Base resume</div>
-      <p class="why" style="font-size:14px">This is what we read from your files. <b style="color:#fff">Check every line</b> — click any text to edit it. Changes save automatically.</p>
+      <p class="why" style="font-size:14px">This is your resume. Click any text to edit it. Changes save automatically.</p>
       <p class="why" style="font-size:14px">To tailor it, open an opportunity on your list and press “✨ Tailor my resume”. Your base resume never changes from tailoring.</p>
       <button class="linkbtn" onclick="$('#rw').hidden=true;openWiz('resume')">Re-upload files</button>`;
     return;

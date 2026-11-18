@@ -27,7 +27,7 @@
   <div class="wrap">
     <nav>
       <div class="brand"><span class="logo">B_</span></div>
-      <div class="navr"><span id="status" class="status"><i></i>connecting…</span><a href="/app" class="pillbtn glassbtn">Sign in</a><a href="/app" class="pillbtn whitebtn">Get started</a></div>
+      <div class="navr"><span id="status" class="status" hidden></span><a href="/app" class="pillbtn glassbtn">Sign in</a><a href="/app" class="pillbtn whitebtn">Get started</a></div>
     </nav>
     <div class="herogrid">
       <div>
@@ -75,13 +75,11 @@
   </div>
 </section>
 
-<footer class="foot"><div class="wrap">Bulldog Reach · Yale beta. Dates and links come from live search — confirm on the official page. Match scores are estimates. To be excluded from suggestions, email <a href="mailto:david.frumgarzts@yale.edu">david.frumgarzts@yale.edu</a>.</div></footer>
 
 <script>
 fetch("/api/config").then((r) => r.json()).then((c) => {
   const el = document.getElementById("status");
-  el.innerHTML = "<i></i>" + (c.demo ? "demo mode" : "live");
-  if (!c.demo) el.classList.add("live");
+  if (c.demo) { el.hidden = false; el.innerHTML = "<i></i>demo mode"; }
 });
 </script>
 </body>
