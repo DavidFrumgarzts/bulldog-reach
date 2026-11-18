@@ -61,7 +61,8 @@ Return ONLY JSON:
 { "opportunities": [ {
    "title": string, "org": string, "type": "internship"|"job"|"research"|"fellowship"|"program",
    "location": string, "deadline": string|null, "deadline_note": string,
-   "url": string, "pitch": string,          // 1 punchy line on why it's great, max 16 words
+   "url": string, "domain": string,        // the organization's OWN website domain for its logo, e.g. "x.ai", "goldmansachs.com", "yale.edu" (never a job board)
+   "pitch": string,                         // 1 punchy line on why it's great, max 16 words
    "yale_tie": string, "fit": number          // 0-100 fit for this student
 } ] }`;
 
@@ -187,10 +188,10 @@ function demoOpps() {
   return {
     _meta: { model: "demo", demo: true },
     opportunities: [
-      { title: "Grok Summer Intern — Post-training", org: "SpaceXSI (example)", type: "internship", location: "Palo Alto", deadline: `${y}-01-15`, deadline_note: "Rolling; early apps favored", url: "https://x.ai/careers", pitch: "Ship RL evals on a frontier model your first week.", yale_tie: "3 Yale NLP Lab alumni on team", fit: 90 },
-      { title: "Undergrad RA — NLP & Agents Lab", org: "Yale CS (example)", type: "research", location: "New Haven", deadline: `${y}-02-01`, deadline_note: "Email PI with a 1-page proposal", url: "https://cpsc.yale.edu", pitch: "Co-author a benchmark paper before junior year.", yale_tie: "On campus", fit: 84 },
-      { title: "Tsai CITY Summer Fellowship", org: "Yale Tsai CITY (example)", type: "fellowship", location: "New Haven", deadline: `${y}-03-01`, deadline_note: "Funding for student ventures", url: "https://city.yale.edu", pitch: "Get paid to keep building tonight's hack all summer.", yale_tie: "Yale program", fit: 78 },
-      { title: "Applied AI Engineer Intern", org: "AI startup (example)", type: "internship", location: "NYC", deadline: null, deadline_note: "Rolling", url: "https://www.ycombinator.com/jobs", pitch: "Small team, real ownership, Yale '22 founder.", yale_tie: "Founder is Yale '22", fit: 72 },
+      { title: "Grok Summer Intern — Post-training", org: "SpaceXSI (example)", domain: "x.ai", type: "internship", location: "Palo Alto", deadline: `${y}-01-15`, deadline_note: "Rolling; early apps favored", url: "https://x.ai/careers", pitch: "Ship RL evals on a frontier model your first week.", yale_tie: "3 Yale NLP Lab alumni on team", fit: 90 },
+      { title: "Undergrad RA — NLP & Agents Lab", org: "Yale CS (example)", domain: "yale.edu", type: "research", location: "New Haven", deadline: `${y}-02-01`, deadline_note: "Email PI with a 1-page proposal", url: "https://cpsc.yale.edu", pitch: "Co-author a benchmark paper before junior year.", yale_tie: "On campus", fit: 84 },
+      { title: "Tsai CITY Summer Fellowship", org: "Yale Tsai CITY (example)", domain: "city.yale.edu", type: "fellowship", location: "New Haven", deadline: `${y}-03-01`, deadline_note: "Funding for student ventures", url: "https://city.yale.edu", pitch: "Get paid to keep building tonight's hack all summer.", yale_tie: "Yale program", fit: 78 },
+      { title: "Applied AI Engineer Intern", org: "AI startup (example)", domain: "anthropic.com", type: "internship", location: "NYC", deadline: null, deadline_note: "Rolling", url: "https://www.ycombinator.com/jobs", pitch: "Small team, real ownership, Yale '22 founder.", yale_tie: "Founder is Yale '22", fit: 72 },
     ],
   };
 }
@@ -313,6 +314,7 @@ function sanitizeOpp(o = {}) {
   const deadline = isDate(o.deadline) && o.deadline >= today() ? o.deadline : null;
   return {
     title: clip(o.title, 200), org: clip(o.org, 160), type: clip(o.type, 30), location: clip(o.location, 120),
+    domain: /^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(String(o.domain || "").replace(/^https?:\/\/(www\.)?/, "").split("/")[0]) ? String(o.domain).replace(/^https?:\/\/(www\.)?/, "").split("/")[0].toLowerCase().slice(0, 80) : "",
     deadline, deadline_note: clip(o.deadline_note, 200), url: /^https?:\/\//.test(o.url || "") ? clip(o.url, 500) : "",
     pitch: clip(o.pitch, 300), yale_tie: clip(o.yale_tie, 200), fit: Math.max(0, Math.min(100, +o.fit || 0)),
   };

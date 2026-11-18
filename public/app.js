@@ -156,14 +156,14 @@ function newChat() {
   document.querySelectorAll(".side-hist .hrow").forEach((r) => r.classList.remove("on"));
   const p = APP.profile || {};
   const starters = [
-    p.summer_goal && [p.summer_goal, "Your summer goal"],
+    p.summer_goal && [p.summer_goal, "Your goal"],
     ...(p.fields || []).slice(0, 2).map((f) => SUGG[f] && [SUGG[f], f]),
     ["Find info sessions and coffee chats this month", "Events"],
     ["What fellowships can fund my summer?", "Funding"],
-  ].filter(Boolean).slice(0, 4);
+  ].filter(Boolean).filter((x, i, a) => a.findIndex((y) => y[0] === x[0]) === i).slice(0, 4);
   $("#thread").innerHTML = `<div class="empty-hero">
     <h1>${firstName() ? `Hi ${esc(firstName())}.` : "Hi."} What do you want to achieve this summer?</h1>
-    <p>I’ll find opportunities that fit ${p.year ? `a Yale ${esc(p.year.toLowerCase())}` : "you"}, save the ones you like, and keep every deadline on your calendar.</p>
+    <p>Openings matched to ${p.year ? `a Yale ${esc(p.year.toLowerCase())}` : "you"}${p.fields?.length ? ` in ${esc(p.fields.slice(0, 2).join(" and "))}` : ""}, with deadlines synced to your calendar.</p>
     <div class="starter">${starters.map(([t, s]) => `<button data-v="${esc(t)}" onclick="sendAsk(this.dataset.v)">${esc(t)}<small>${esc(s)}</small></button>`).join("")}</div>
   </div>`;
   $("#ask").value = ""; $("#ask").focus();
@@ -186,12 +186,14 @@ async function sendAsk(text) {
   const prev = $("#deck").parentElement;
   if (prev && prev.id !== "park") prev.insertAdjacentHTML("beforeend", `<p class="why">Showed ${S.seen.length} opportunities · ${S.liked.length} saved to your list.</p>`);
   addUser(text);
-  const body = addAssistant(`<p>On it — searching live for opportunities that fit <b>${esc(text)}</b>${APP.profile?.year ? ` for a ${esc(APP.profile.year.toLowerCase())}` : ""}.</p>`);
+  const body = addAssistant(`<p>Searching for openings that fit <b>${esc(text)}</b><span class="typing"><i></i><i></i><i></i></span></p>`);
   body.appendChild($("#deck"));
   $("#goal").value = text;
   if (!readGoal()) return;
   await loadDeck();
-  if (S.deck.length) body.querySelector("p").innerHTML = `I found <b>${S.deck.length} opportunities</b> for “${esc(text)}”. Swipe right to save one — I’ll research its dates and add them to your calendar. When you’re done, build a plan for the people to reach.`;
+  body.querySelector("p").innerHTML = S.deck.length
+    ? `<b>${S.deck.length} openings</b> for “${esc(text)}”. Swipe right to save — saved ones get their deadlines on your calendar.`
+    : `No new openings for “${esc(text)}”. Try a broader goal.`;
 }
 
 // Plan → its own assistant message.
@@ -235,3 +237,22 @@ openResume = function () {
 function autoGrow() { const t = $("#ask"); t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 180) + "px"; }
 $("#ask").addEventListener("input", autoGrow);
 $("#ask").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("#composer").requestSubmit(); } });
+
+// Confetti when an application turns into an offer.
+const _setItem = setItem;
+setItem = async function (id, patch) {
+  await _setItem(id, patch);
+  if (patch.status === "offer") confetti();
+};
+function confetti() {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const box = Object.assign(document.createElement("div"), { className: "confetti" });
+  const colors = ["#34C759", "#F5C48C", "#0A84FF", "#FF5A47", "#FFFFFF"];
+  for (let i = 0; i < 80; i++) {
+    const p = document.createElement("i");
+    p.style.cssText = `left:${Math.random() * 100}%;background:${colors[i % 5]};animation-delay:${Math.random() * 0.4}s;transform:rotate(${Math.random() * 180}deg)`;
+    box.appendChild(p);
+  }
+  document.body.appendChild(box);
+  setTimeout(() => box.remove(), 2200);
+}

@@ -112,3 +112,79 @@
   .starter{grid-template-columns:1fr}
   .oh{font-size:40px}
 }
+
+/* ================= job cards (Figma: "Job cards · motion") ================= */
+.inchat .stack{width:360px;height:470px}
+.jc{position:absolute;inset:0 0 auto 0;padding:22px;border-radius:28px;background:#FBF6EF;color:#111;display:flex;flex-direction:column;gap:12px;
+  box-shadow:0 24px 48px rgba(20,10,2,.45);cursor:grab;user-select:none;touch-action:none;overflow:hidden;
+  transform:translateY(calc(var(--i) * 14px)) scale(calc(1 - var(--i) * .04)) rotate(calc(var(--i) * 2deg));z-index:calc(10 - var(--i));
+  transition:transform .45s cubic-bezier(.2,.9,.25,1.15), opacity .35s}
+.jc[data-i="2"]{opacity:.55}
+.jc.drag{transition:none;cursor:grabbing}
+.jc.deal{animation:deal .6s cubic-bezier(.2,.9,.25,1.2) both;animation-delay:calc((2 - var(--i)) * 70ms)}
+@keyframes deal{from{opacity:0;transform:translateY(120px) scale(.9) rotate(-4deg)}}
+.jc-wash{position:absolute;inset:0;border-radius:28px;pointer-events:none;transition:background .15s}
+.jc .stamp{top:22px;font-size:22px;z-index:2}
+.jc .stamp.y{left:auto;right:84px;color:#22B35E;border-color:#22B35E}
+.jc .stamp.n{right:auto;left:90px;color:#FF5A47;border-color:#FF5A47}
+.jc-top{display:flex;justify-content:space-between;align-items:center}
+.jc-org{display:flex;gap:10px;align-items:center;min-width:0}
+.jc-mono{position:relative;flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;font-size:18px;font-weight:700;overflow:hidden}
+.jc-mono img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff;padding:6px}
+.jc-mono.sm{width:32px;height:32px;border-radius:9px;font-size:14px}
+.jc-mono.sm img{padding:4px}
+.jc-mono.lg{width:52px;height:52px;border-radius:14px;font-size:22px}
+.jc-orgname{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px}
+.jc-meta{font-size:12px;color:#6B5B4D;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px}
+.ring{position:relative;width:52px;height:52px;flex:none}
+.ring svg{width:52px;height:52px;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:5}
+.ring .rbg{stroke:#E7DCCF}
+.ring .rfg{stroke:#22B35E;stroke-linecap:round;stroke-dasharray:138.2;stroke-dashoffset:138.2;transition:stroke-dashoffset 1s cubic-bezier(.2,.8,.2,1) .15s}
+.jc.in .ring .rfg,.jc:not([data-i="0"]) .ring .rfg{stroke-dashoffset:calc(138.2 * (1 - var(--p) / 100))}
+.ring span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700}
+.jc h3{margin:2px 0 0;font-size:24px;line-height:1.08;letter-spacing:-.025em;font-weight:700}
+.jc-pitch{margin:0;font-size:14px;line-height:1.4;color:#4A3B2E}
+.jc-chips{display:flex;flex-wrap:wrap;gap:6px}
+.jc-chips span{font-size:12px;font-weight:600;padding:5px 10px;border-radius:99px}
+.c-dl{background:#FFE9B8;color:#7A4A00}.c-dl.soon{background:#FFD6D0;color:#9A1F12}
+.c-yt{background:#F2E2D0;color:#7A4A22}
+.jc-stats{display:grid;grid-template-columns:repeat(3,1fr);margin-top:auto;padding:12px 6px;border-radius:16px;background:#F3EBE0;text-align:center}
+.jc-stats b{display:block;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jc-stats small{font-size:11px;color:#6B5B4D}
+.jc.skel{cursor:default;background:rgba(251,246,239,.1);border:1px solid rgba(255,255,255,.12);height:360px;gap:14px}
+.jc.skel i{display:block;border-radius:10px;height:18px;background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(255,255,255,.2),rgba(255,255,255,.06));background-size:200% 100%;animation:shimmer 1.2s linear infinite}
+.jc.skel i:nth-child(1){width:40%;height:40px}.jc.skel i:nth-child(2){width:85%;height:26px}.jc.skel i:nth-child(3){width:60%;height:26px}.jc.skel i:nth-child(4){width:45%}.jc.skel i:nth-child(5){height:64px;margin-top:auto}
+@keyframes shimmer{to{background-position:-200% 0}}
+.swbtns{margin-top:18px}
+.swb.yes{width:auto;padding:0 28px;border-radius:99px;font:600 17px Inter;color:#111}
+.swb.yes::after{content:" Save"}
+.badge.bump{animation:bump .5s cubic-bezier(.3,1.6,.5,1)}
+@keyframes bump{40%{transform:scale(1.6)}}
+
+/* ================= motion across the app ================= */
+.msg-u,.msg-a{animation:rise .38s cubic-bezier(.2,.8,.2,1) both}
+.msg-u{transform-origin:right bottom}
+.empty-hero{animation:rise .5s ease both}
+.starter button{transition:transform .18s, background .18s}
+.starter button:hover{transform:translateY(-3px)}
+.starter button:nth-child(1){animation:rise .45s .05s both}.starter button:nth-child(2){animation:rise .45s .1s both}
+.starter button:nth-child(3){animation:rise .45s .15s both}.starter button:nth-child(4){animation:rise .45s .2s both}
+.lrow{animation:rise .4s both}
+.lrow:nth-child(2){animation-delay:.05s}.lrow:nth-child(3){animation-delay:.1s}.lrow:nth-child(4){animation-delay:.15s}.lrow:nth-child(5){animation-delay:.2s}
+.lrow{transition:transform .18s, background .15s}.lrow:hover{transform:translateX(4px)}
+.likes div{animation:pop .4s cubic-bezier(.3,1.5,.5,1) both}
+@keyframes pop{from{opacity:0;transform:scale(.85)}}
+.task input:checked{animation:pop .3s cubic-bezier(.3,1.8,.5,1)}
+.step,.pc{animation:rise .45s both}
+.steps .step:nth-child(2){animation-delay:.06s}.steps .step:nth-child(3){animation-delay:.12s}.steps .step:nth-child(4){animation-delay:.18s}
+.cta,.newchat,.sidenav button,.whitebtn,.glassbtn{transition:transform .15s, background .15s}
+.cta:active,.newchat:active,.whitebtn:active{transform:scale(.97)}
+.typing{display:inline-flex;gap:4px;vertical-align:middle;margin-left:6px}
+.typing i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.6);animation:blinkdot 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes blinkdot{50%{opacity:.2;transform:translateY(-2px)}}
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:90;overflow:hidden}
+.confetti i{position:absolute;top:-12px;width:8px;height:14px;border-radius:2px;animation:fall 1.6s cubic-bezier(.3,.6,.4,1) forwards}
+@keyframes fall{to{transform:translateY(105vh) rotate(720deg)}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}

@@ -54,7 +54,7 @@ function renderCart() {
     const urgent = d != null && d <= 14 && !["submitted", "interview", "offer", "dropped"].includes(it.status);
     const nextEv = (it.detail?.events || []).filter((e) => e.date && daysUntil(e.date) >= 0).sort((a, b) => a.date.localeCompare(b.date))[0];
     return `<div class="lrow ${it.status === "dropped" ? "dim" : ""}" onclick="openItem('${it.id}')">
-      <div class="lrank">${rank + 1}</div>
+      <div class="lrank">${typeof logoTile === "function" ? logoTile(it.opp, "jc-mono sm") : rank + 1}</div>
       <div class="lmain">
         <div class="ltitle">${esc(it.opp.title)}</div>
         <div class="lorg">${esc(it.opp.org)} · ${esc(it.opp.type || "opportunity")}${it.opp.yale_tie ? ` · <span class="lyt">${esc(it.opp.yale_tie)}</span>` : ""}</div>
@@ -88,7 +88,7 @@ function paintItem(it) {
   ].sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"));
   $("#itembody").innerHTML = `
     <div class="k">${esc(it.opp.type || "opportunity")} · ${esc(it.opp.org)}</div>
-    <h2 style="font-size:36px;line-height:1.05;margin:6px 0 10px">${esc(it.opp.title)}</h2>
+    <div class="row3" style="margin:6px 0 10px;flex-wrap:nowrap">${typeof logoTile === "function" ? logoTile(it.opp, "jc-mono lg") : ""}<h2 style="font-size:34px;line-height:1.05;margin:0">${esc(it.opp.title)}</h2></div>
     <div class="row3">
       <select class="track-sel s-${it.status}" onchange="setItem('${it.id}', {status:this.value})">${Object.entries(STATUS_TEXT).map(([k, v]) => `<option value="${k}" ${k === it.status ? "selected" : ""}>${v}</option>`).join("")}</select>
       ${it.opp.url ? `<a class="glassbtn smallbtn" href="${esc(it.opp.url)}" target="_blank" rel="noopener">Official page ↗</a>` : ""}

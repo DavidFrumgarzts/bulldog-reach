@@ -19,7 +19,7 @@
   <section class="ostep" data-step="email">
     <div class="k">Welcome to Bulldog Reach</div>
     <h1 class="oh">Let’s get you set up.</h1>
-    <p class="op">Sign in with your Yale email — we’ll send you a code. No password.</p>
+    <p class="op">Sign in with your Yale email. We’ll send a code — no password.</p>
     <div id="authbox" class="authbox bare">
       <div id="authstep">
         <form id="authform" class="authform" onsubmit="sendCode(event)">
@@ -44,7 +44,7 @@
   <section class="ostep" data-step="resume" hidden>
     <div class="k">Step 3 of 5</div>
     <h1 class="oh">Upload your resume.</h1>
-    <p class="op">Claude reads it once and tailors a version for every opportunity you save — only as suggestions you approve.</p>
+    <p class="op">Used to tailor a version for each job you save. Nothing changes without your OK.</p>
     <label class="drop odrop big"><b>📄 Your resume</b><span id="o_rname">PDF or Word (.docx)</span><input id="o_rfile" type="file" accept=".pdf,.docx,.txt" onchange="$('#o_rname').textContent=this.files[0]?.name||'';parseInBackground()" /></label>
     <div id="o_rnote" class="why"></div>
     <div id="o_rerr" class="err"></div>
@@ -89,7 +89,7 @@
     <div class="sidetop"><a href="/" class="logo" style="text-decoration:none;color:#fff">B_</a><span class="sidebrand">Bulldog Reach</span></div>
     <button class="newchat" onclick="newChat()">＋ New chat</button>
     <nav class="sidenav">
-      <button onclick="openList()">📌 My list <b id="cartcount" class="badge"></b></button>
+      <button id="mylistbtn" onclick="openList()">📌 My list <b id="cartcount" class="badge"></b></button>
       <button id="resumebtn" onclick="openResume()">📄 My resume</button>
       <button onclick="openCalendar()">📅 Calendar sync</button>
     </nav>
@@ -108,7 +108,7 @@
       <textarea id="ask" rows="1" placeholder="Ask for opportunities, e.g. “paid AI research this summer”"></textarea>
       <button class="send" aria-label="Send">↑</button>
     </form>
-    <div class="composer-note">Claude can be wrong — check dates and links on the official page.</div>
+    <div class="composer-note">Confirm dates and links on the official page.</div>
   </main>
 </div>
 
@@ -122,7 +122,7 @@
     <div class="deckgrid">
       <div>
         <h2 class="deckh">Which of these do you want?</h2>
-        <p class="why" style="font-size:15px;margin:8px 0 0">Swipe right to save to your list — I’ll find its deadlines and info sessions and put them on your calendar.</p>
+        <p class="why" style="font-size:15px;margin:8px 0 0">Swipe right to save. Saved roles get their deadlines on your calendar.</p>
         <div class="likes" id="likes"></div>
         <div class="deckcta">
           <button class="cta" id="planbtn" disabled>Build my plan →</button>

@@ -183,7 +183,7 @@ $("#planbtn").onclick = () => buildPlan();
 async function loadDeck() {
   $("#btn").disabled = $("#more").disabled = true;
   $("#deck").hidden = false;
-  $("#stack").innerHTML = `<div class="empty"><div><p class="loading" style="padding:0"><i></i>Claude is searching for real openings…</p></div></div>`;
+  $("#stack").innerHTML = [0, 1, 2].map((i) => `<div class="jc skel" style="--i:${i}"><i></i><i></i><i></i><i></i><i></i></div>`).reverse().join("");
   renderLikes();
   window.scrollTo({ top: $("#deck").offsetTop, behavior: "smooth" });
   try {
@@ -209,58 +209,120 @@ async function loadDeck() {
 const TYPE_COLORS = { internship: "#7A4A22", job: "#2E4A6B", research: "#3E5A3A", fellowship: "#6B3A55", program: "#5A4A22" };
 const fmtDate = (iso) => { if (!iso) return ""; const d = new Date(iso + "T12:00:00"); return isNaN(d) ? iso : d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); };
 
+const daysUntilIso = (iso) => (iso ? Math.ceil((new Date(iso + "T23:59:00") - new Date()) / 864e5) : null);
+// Official logos: the org's own domain (never a job board) → its site icon at high resolution.
+const JOB_BOARDS = /(^|\.)(greenhouse|lever|workday|myworkdayjobs|linkedin|joinhandshake|handshake|symplicity|indeed|glassdoor|ashbyhq|smartrecruiters|icims|wellfound|ycombinator|communityforce|terradotta)\./i;
+function logoDomain(o) {
+  let fromUrl = ""; try { fromUrl = new URL(o.url).hostname; } catch {}
+  for (let d of [o.domain, fromUrl]) {
+    d = String(d || "").toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0];
+    if (/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(d) && !JOB_BOARDS.test(d + ".")) return d.replace(/^(careers|jobs|apply|boards)\./, "");
+  }
+  return "";
+}
+const logoUrl = (o) => { const d = logoDomain(o); return d ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(d)}&sz=128` : ""; };
+// Logo tile with a letter monogram underneath; if the logo fails to load, the monogram shows.
+const logoTile = (o, cls = "jc-mono") => `<b class="${cls}" style="background:${monoColor(o.org)}">${esc(String(o.org || "?").trim()[0] || "?")}${logoUrl(o) ? `<img src="${esc(logoUrl(o))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()" />` : ""}</b>`;
+const MONO_COLORS = ["#111111", "#2E4A6B", "#3E5A3A", "#6B3A55", "#7A4A22", "#1F5E5B"];
+const monoColor = (s) => MONO_COLORS[[...String(s)].reduce((a, c) => a + c.charCodeAt(0), 0) % MONO_COLORS.length];
+
+// Job card (design: Figma "Job cards · motion" → JobCard). Fanned stack, top card last.
 function renderDeck() {
   const stack = $("#stack");
   if (!S.deck.length) {
-    stack.innerHTML = `<div class="empty"><div>That’s the deck.<br/><b style="color:#fff">${S.liked.length} picked.</b><br/><br/>Build your plan, or load more options.</div></div>`;
+    stack.innerHTML = `<div class="empty"><div>No more cards.<br/><b style="color:#fff">${S.liked.length} saved.</b><br/><br/>Build your plan, or load more.</div></div>`;
     return;
   }
-  // Render top 3 cards, top card last (on top)
-  stack.innerHTML = S.deck.slice(0, 3).map((o, i) => `
-    <div class="oc" data-i="${i}" style="--c1:${TYPE_COLORS[o.type] || "#7A4A22"};transform:translateY(${i * 14}px) scale(${1 - i * 0.04});z-index:${10 - i};opacity:${i > 1 ? 0.6 : 1}">
-      <span class="stamp y">WANT</span><span class="stamp n">PASS</span>
-      <div class="t"><span class="type">${esc(o.type || "role")}</span><span class="tag">${esc(o.fit ?? "–")}% fit</span></div>
-      <div class="org">${esc(o.org)} · ${esc(o.location || "")}</div>
-      <h3>${esc(o.title)}</h3>
-      <div class="pitch">${esc(o.pitch)}</div>
-      <div class="meta">
-        <span class="dl">${o.deadline ? "Due " + esc(fmtDate(o.deadline)) : esc(o.deadline_note || "Rolling")}</span>
-        ${o.yale_tie ? `<span class="yt">${esc(o.yale_tie)}</span>` : ""}
+  const deal = !S._dealt; S._dealt = true; // cards "deal in" only when a new batch arrives
+  stack.innerHTML = S.deck.slice(0, 3).map((o, i) => {
+    const d = daysUntilIso(o.deadline), fit = Math.max(0, Math.min(100, +o.fit || 0));
+    return `
+    <div class="jc ${deal ? "deal" : ""}" data-i="${i}" style="--i:${i};--p:${fit}">
+      <div class="jc-wash"></div>
+      <span class="stamp y">SAVE</span><span class="stamp n">PASS</span>
+      <div class="jc-top">
+        <div class="jc-org">${logoTile(o)}
+          <div><div class="jc-orgname">${esc(o.org)}</div><div class="jc-meta">${esc([o.location, o.type].filter(Boolean).join(" · "))}</div></div></div>
+        <div class="ring"><svg viewBox="0 0 52 52"><circle class="rbg" cx="26" cy="26" r="22"/><circle class="rfg" cx="26" cy="26" r="22"/></svg><span><b data-count="${fit}">${fit}</b>%</span></div>
       </div>
-    </div>`).reverse().join("");
-  attachDrag(stack.querySelector('.oc[data-i="0"]'));
+      <h3>${esc(o.title)}</h3>
+      ${o.pitch ? `<p class="jc-pitch">${esc(o.pitch)}</p>` : ""}
+      <div class="jc-chips">
+        <span class="c-dl ${d != null && d <= 14 ? "soon" : ""}">${d != null ? `Due in ${d} day${d === 1 ? "" : "s"}` : esc(o.deadline_note || "Rolling deadline")}</span>
+        ${o.yale_tie ? `<span class="c-yt">${esc(o.yale_tie)}</span>` : ""}
+      </div>
+      <div class="jc-stats">
+        <div><b ${d != null ? `data-count="${d}"` : ""}>${d != null ? d : "—"}</b><small>days left</small></div>
+        <div><b>${o.deadline ? esc(fmtDate(o.deadline).replace(/, \d{4}$/, "")) : "Rolling"}</b><small>deadline</small></div>
+        <div><b>${esc((o.location || "—").split(/[,(]/)[0].slice(0, 14))}</b><small>location</small></div>
+      </div>
+    </div>`;
+  }).reverse().join("");
+  const top = stack.querySelector('.jc[data-i="0"]');
+  requestAnimationFrame(() => requestAnimationFrame(() => { top?.classList.add("in"); countUp(top); }));
+  attachDrag(top);
+}
+
+// Numbers count up from 0 when a card comes to the top.
+function countUp(root) {
+  if (!root || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  root.querySelectorAll("[data-count]").forEach((el) => {
+    const to = +el.dataset.count, t0 = performance.now(), dur = 700;
+    const step = (t) => { const k = Math.min(1, (t - t0) / dur); el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  });
 }
 
 function attachDrag(card) {
   if (!card) return;
   let x0 = 0, y0 = 0, dx = 0, dy = 0, down = false;
-  const y = card.querySelector(".stamp.y"), n = card.querySelector(".stamp.n");
+  const y = card.querySelector(".stamp.y"), n = card.querySelector(".stamp.n"), wash = card.querySelector(".jc-wash");
+  const next = card.parentElement.querySelector('.jc[data-i="1"]');
   card.onpointerdown = (e) => { down = true; x0 = e.clientX; y0 = e.clientY; card.setPointerCapture(e.pointerId); card.classList.add("drag"); };
   card.onpointermove = (e) => {
     if (!down) return;
     dx = e.clientX - x0; dy = e.clientY - y0;
-    card.style.transform = `translate(${dx}px,${dy}px) rotate(${dx / 18}deg)`;
-    y.style.opacity = Math.max(0, dx / 120); n.style.opacity = Math.max(0, -dx / 120);
+    const k = Math.min(1, Math.abs(dx) / 140);
+    card.style.transform = `translate(${dx}px,${dy * 0.4}px) rotate(${dx / 16}deg)`;
+    y.style.opacity = dx > 0 ? k : 0; n.style.opacity = dx < 0 ? k : 0;
+    wash.style.background = dx > 0 ? `rgba(34,179,94,${0.28 * k})` : `rgba(255,90,71,${0.28 * k})`;
+    if (next) next.style.transform = `translateY(${14 - 14 * k}px) scale(${0.96 + 0.04 * k})`; // next card rises as you drag
   };
   card.onpointerup = () => {
     if (!down) return;
     down = false; card.classList.remove("drag");
     if (Math.abs(dx) > 110) swipe(dx > 0);
-    else { card.style.transform = ""; y.style.opacity = n.style.opacity = 0; }
+    else { card.style.transform = ""; y.style.opacity = n.style.opacity = 0; wash.style.background = ""; if (next) next.style.transform = ""; }
     dx = dy = 0;
   };
 }
 
 function swipe(like) {
-  const card = $('#stack .oc[data-i="0"]');
-  if (!card || !S.deck.length) return;
+  const card = $('#stack .jc[data-i="0"]');
+  if (!card || !S.deck.length || card.classList.contains("gone")) return;
   const o = S.deck.shift();
-  if (like) { S.liked.push(o); addToCart(o); }
-  card.style.transform = `translate(${like ? 600 : -600}px, -40px) rotate(${like ? 30 : -30}deg)`;
-  card.style.opacity = 0;
+  card.classList.add("gone");
   card.querySelector(like ? ".stamp.y" : ".stamp.n").style.opacity = 1;
+  card.querySelector(".jc-wash").style.background = like ? "rgba(34,179,94,.28)" : "rgba(255,90,71,.28)";
+  let wait = 300;
+  if (like) {
+    S.liked.push(o); addToCart(o);
+    // Saved: shrink and fly into "My list" (sidebar), then bump its badge.
+    const target = document.querySelector("#mylistbtn") || document.querySelector("#cartcount");
+    if (target && target.offsetParent) {
+      const a = card.getBoundingClientRect(), b = target.getBoundingClientRect();
+      const tx = b.left + b.width / 2 - (a.left + a.width / 2), ty = b.top + b.height / 2 - (a.top + a.height / 2);
+      card.style.transition = "transform .6s cubic-bezier(.5,-0.2,.3,1), opacity .6s ease .1s";
+      card.style.transform = `translate(${tx}px,${ty}px) scale(.12) rotate(-12deg)`;
+      card.style.opacity = 0.2;
+      wait = 560;
+      setTimeout(() => { const bd = $("#cartcount"); bd?.classList.remove("bump"); void bd?.offsetWidth; bd?.classList.add("bump"); }, 520);
+    } else { card.style.transform = "translate(640px,-40px) rotate(28deg)"; card.style.opacity = 0; }
+  } else {
+    card.style.transform = "translate(-640px,40px) rotate(-28deg)"; card.style.opacity = 0;
+  }
   renderLikes();
-  setTimeout(renderDeck, 260);
+  setTimeout(renderDeck, wait);
 }
 $("#yesbtn").onclick = () => swipe(true);
 $("#nobtn").onclick = () => swipe(false);
