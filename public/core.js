@@ -5,6 +5,8 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 const oddsColor = (n) => (n >= 65 ? "var(--green)" : n >= 45 ? "var(--yellow)" : "var(--red)");
 const initials = (n) => String(n || "?").replace(/\(.*?\)/g, "").replace(/^(Prof\.|Dr\.)\s*/, "").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 let lastPeople = [];
+// A name is shown as a name: drop any bracketed how-to-find note (older saved plans have them).
+const pname = (p) => String(p.name || "").replace(/\s*\((?!example)[^)]*\)/g, "").trim();
 
 // ---------------- auth (beta) ----------------
 const AUTH = { on: false, sb: null, session: null, domain: "yale.edu", limits: {} };
@@ -13,7 +15,11 @@ const token = () => AUTH.session?.access_token;
 async function boot() {
   const cfg = await fetch("/api/config").then((r) => r.json());
   const el = $("#status");
+<<<<<<< Updated upstream
   el.innerHTML = `<i></i>${cfg.demo ? "demo mode" : "live"}`;
+=======
+  el.hidden = !cfg.demo; el.innerHTML = "<i></i>demo mode";
+>>>>>>> Stashed changes
   if (!cfg.demo) el.classList.add("live");
   AUTH.on = cfg.auth; AUTH.emailCode = !!cfg.emailCode; AUTH.domain = cfg.domain; AUTH.limits = cfg.limits || {};
   if (!AUTH.on) return paintAuth();
@@ -183,7 +189,11 @@ $("#planbtn").onclick = () => buildPlan();
 async function loadDeck() {
   $("#btn").disabled = $("#more").disabled = true;
   $("#deck").hidden = false;
+<<<<<<< Updated upstream
   $("#stack").innerHTML = [0, 1, 2].map((i) => `<div class="jc skel" style="--i:${i}"><i></i><i></i><i></i><i></i><i></i></div>`).reverse().join("");
+=======
+  $("#stack").innerHTML = `<div class="empty"><div><p class="loading" style="padding:0"><i></i>Bulldog is searching…</p></div></div>`;
+>>>>>>> Stashed changes
   renderLikes();
   window.scrollTo({ top: $("#deck").offsetTop, behavior: "smooth" });
   try {
@@ -191,9 +201,13 @@ async function loadDeck() {
     const fresh = (d.opportunities || []).filter((o) => o && o.title && !S.seen.includes(o.title));
     fresh.forEach((o) => {
       S.seen.push(o.title);
+<<<<<<< Updated upstream
       // Never put a past deadline on the calendar: search sometimes returns last cycle's date.
+=======
+      // Never put a past deadline on the calendar: a search can return last cycle's date.
+>>>>>>> Stashed changes
       if (o.deadline && (!/^\d{4}-\d{2}-\d{2}$/.test(o.deadline) || o.deadline < new Date().toISOString().slice(0, 10))) {
-        o.deadline_note = /^\d{4}/.test(o.deadline) ? `Last cycle closed ${fmtDate(o.deadline)} — watch for the next one` : o.deadline_note || "Check the site";
+        o.deadline_note = /^\d{4}/.test(o.deadline) ? "Reopens next cycle" : o.deadline_note || "Rolling";
         o.deadline = null;
       }
     });
@@ -354,7 +368,11 @@ async function buildPlan() {
   } catch (err) {
     stop();
     const last = (() => { try { return JSON.parse(localStorage.bb_last || "null"); } catch { return null; } })();
+<<<<<<< Updated upstream
     if (last) render(last.d, last.goal, `Couldn’t load a new plan (${err.message.slice(0, 80)}). Showing your last plan.`);
+=======
+    if (last) render(last.d, last.goal, `Bulldog couldn’t finish that one. Showing your last plan.`);
+>>>>>>> Stashed changes
     else { $("#out").innerHTML = ""; $("#err").textContent = err.message; }
   } finally {
     $("#btn").disabled = $("#planbtn").disabled = false;
@@ -362,10 +380,14 @@ async function buildPlan() {
 }
 
 function showProgress() {
-  const steps = ["Turning your goal into a north star", "Searching X for recent posts", "Searching the web for Yale ties", "Ranking people by fit × reply odds", "Drafting one message per person"];
+  const steps = ["Turning your goal into a north star", "Finding the people behind your picks", "Searching the web for Yale ties", "Ranking people by fit × reply odds", "Drafting one message per person"];
   const at = [0, 2, 6, 10, 14]; // seconds each step lights up
   $("#out").innerHTML = `<div class="wrap prog">
+<<<<<<< Updated upstream
     <div class="k">Live search</div>
+=======
+    <div class="k">Bulldog · live search</div>
+>>>>>>> Stashed changes
     <h2>Building your game plan <span id="tick">0s</span></h2>
     <ul class="plist">${steps.map((s) => `<li><b></b>${esc(s)}</li>`).join("")}</ul></div>`;
   window.scrollTo({ top: $("#out").offsetTop - 20, behavior: "smooth" });
@@ -451,7 +473,11 @@ function render(d, goal, warning) {
     ${warning ? `<div class="banner">${esc(warning)}</div>` : ""}
     <div class="rtop">
       <div class="goalpill"><span>Goal</span>${esc(goal)}</div>
+<<<<<<< Updated upstream
       <span class="status ${live ? "live" : ""}"><i></i>${live ? (d._meta.live_search ? "live search" : "live") : "demo data"}</span>
+=======
+      <span class="status ${live ? "live" : ""}"><i></i>${live ? "Bulldog" + (d._meta.live_search ? " · live search" : "") : "demo data"}</span>
+>>>>>>> Stashed changes
     </div>
     <div class="north"><div class="k">North star</div><div class="v">${esc(d.north_star)}</div></div>
     <div class="steps">${(d.game_plan || []).map((s, i) => `
@@ -464,12 +490,12 @@ function render(d, goal, warning) {
     <div class="people">${people.map((p, i) => `
       <div class="pc">
         <div class="hook">
-          <div class="t"><div class="av">${esc(initials(p.name))}</div><span class="tag">#${i + 1} · Step ${esc(p.step)}</span></div>
-          <div class="by">${esc(p.name)} <span>${linkify(p.hook_source)}</span></div>
-          <q>${esc(p.hook)}</q>
+          <div class="t"><div class="av">${esc(initials(pname(p)))}</div><span class="tag">#${i + 1} · Step ${esc(p.step)}</span></div>
+          <div class="by">${esc(pname(p))} <span>${linkify(p.hook_source)}</span></div>
+          ${p.hook ? `<q>${esc(p.hook)}</q>` : ""}
         </div>
         <div class="who">
-          <div class="name">${esc(p.name)}</div>
+          <div class="name">${esc(pname(p))}</div>
           <div class="head">${esc(p.headline)}</div>
           <div class="yt">${(p.yale_ties || []).map((t) => `<span>${esc(t)}</span>`).join("")}</div>
           <div class="meter"><div class="r">GOAL FIT <b>${esc(p.fit_score)}</b></div><div class="track"><i style="width:${+p.fit_score || 0}%;background:var(--amber)"></i></div></div>
@@ -497,7 +523,7 @@ function render(d, goal, warning) {
       <div class="sl">
         <b>${esc(o.title)}</b>
         <div class="o">${esc(o.org)} · ${esc(o.type)}</div>
-        <div class="d">${o.deadline ? "Due " + esc(fmtDate(o.deadline)) : esc(o.deadline_note || "Rolling — apply early")}</div>
+        <div class="d">${o.deadline ? "Due " + esc(fmtDate(o.deadline)) : esc(o.deadline_note || "Rolling")}</div>
         <div class="row2">
           ${o.deadline ? `<button class="calbtn" onclick="addCal(${esc(JSON.stringify("dl-" + o.title))}, this)">📅 Add deadline</button>` : ""}
           ${o.url ? `<a href="${esc(o.url)}" target="_blank" rel="noopener" style="align-self:center">Apply ↗</a>` : ""}
@@ -508,7 +534,11 @@ function render(d, goal, warning) {
       <div class="allcal"><small>${eventsForPlan(d).length} reminders</small><button class="cta" style="width:auto;height:52px;padding:0 22px;font-size:16px;border-radius:14px" onclick="addAllCal()">📅 Add all to calendar (.ics)</button></div>
     </div>
     <div class="week">${(d.this_week || []).map((t) => `<label class="task"><input type="checkbox"><span>${esc(t)}</span></label>`).join("")}</div>
+<<<<<<< Updated upstream
     <div class="meta">${live ? "" : "Demo data"}${d._id ? " · saved to My plans" : ""}</div>
+=======
+    <div class="meta">${[!live && "Demo data", d._id && "Saved to My plans"].filter(Boolean).join(" · ")}</div>
+>>>>>>> Stashed changes
   </div>`;
   if (Object.keys(S.outreach).length) paintTracker();
 }

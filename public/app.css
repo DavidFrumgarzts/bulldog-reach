@@ -113,6 +113,7 @@
   .oh{font-size:40px}
 }
 
+<<<<<<< Updated upstream
 /* ================= job cards (Figma: "Job cards · motion") ================= */
 .inchat .stack{width:360px;height:470px}
 .jc{position:absolute;inset:0 0 auto 0;padding:22px;border-radius:28px;background:#FBF6EF;color:#111;display:flex;flex-direction:column;gap:12px;
@@ -188,3 +189,8 @@
 .confetti i{position:absolute;top:-12px;width:8px;height:14px;border-radius:2px;animation:fall 1.6s cubic-bezier(.3,.6,.4,1) forwards}
 @keyframes fall{to{transform:translateY(105vh) rotate(720deg)}}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+=======
+.osum{margin:0 0 22px;padding:18px 20px;border-radius:18px;background:var(--glass);border:1px solid var(--stroke)}
+.osum p{margin:6px 0 0;font-size:16px;line-height:1.5}
+.osum small{display:block;margin-top:8px;color:var(--mute)}
+>>>>>>> Stashed changes

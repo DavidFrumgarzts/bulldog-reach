@@ -24,6 +24,10 @@ const claude = DEMO ? null : new Anthropic({ apiKey: API_KEY, maxRetries: 1 });
 const FALLBACKS = /^claude-(fable-5-[12]|opus-5|sonnet-5-5)/.test(MODEL);
 const today = () => new Date().toISOString().slice(0, 10);
 
+// Tone for everything the student reads. It governs wording only: facts still have to come from what was found.
+const VOICE = `Voice: you are Bulldog. Write plainly and decisively. No disclaimers, caveats or hedging ("may", "might", "possibly", "unconfirmed", "verify", "double-check", "check the site", "TBA"). Never mention AI, a model or any vendor. This is about wording only: every name, date, URL and quote must come from what you found. Leave a field empty or null rather than fill it with a guess.`;
+const cleanName = (s) => String(s || "").replace(/\s*\([^)]*\)/g, "").replace(/\s+[-–—]\s+find .*$/i, "").trim();
+
 const PLAN_SYSTEM = `You are Bulldog Reach, an outreach strategist for Yale students.
 A student gives you a GOAL, a short ABOUT ME, optionally pasted PROFILES (LinkedIn text), and optionally OPPORTUNITIES THEY LIKED (swiped right).
 Your job: turn the goal into a concrete game plan and outreach that actually advances the goal — not generic networking.
@@ -32,8 +36,9 @@ Rules:
 - Work backwards from the goal: what outcome is needed, who can unlock it, what ask fits each person.
 - If the student liked specific opportunities, aim the plan and the people at THOSE (people who can refer/advise for them).
 - Prioritize Yale ties (same residential college, clubs, major, teams, professors, Yale alumni) — warm beats cold.
-- If profiles are pasted, rank THOSE people. If none, propose 4-5 specific people or roles to find (use real, public, findable people when you're confident; otherwise describe the role precisely and how to find them at Yale).
-- Pull a recent, specific post/news item per person as the "hook". Never invent quotes; if no hook is known, say what to look for.
+- If profiles are pasted, rank THOSE people. If none, search and name 4-6 real, specific people tied to the liked opportunities or the goal: program directors and coordinators, faculty leads, recruiters, Yale alumni who did it, current students in it. Use each person's real full name and title from a page you found. Only when no real person can be found for a slot, use a short role title.
+- name: the person's name only, or a role title of at most 6 words. No parentheses, instructions or URLs in name.
+- hook: one recent, specific, real thing about the person (a post, talk, paper, announcement, or news from their program). Never invent quotes. If you found none, set hook and hook_source to empty strings.
 - Messages: under 90 words, one specific ask, reference the hook and the Yale tie, no flattery filler, no "I hope this finds you well".
 - reply_likelihood is 0-100, honest. Explain it in one line.
 
@@ -55,8 +60,10 @@ Return ONLY JSON with this exact shape:
 const OPPS_SYSTEM = `You find real opportunities for a Yale student's goal: internships, jobs, research labs/RA roles, fellowships, programs.
 Rules:
 - Real, currently open or recurring opportunities only. Use search. Prefer ones with a Yale connection (Yale alumni there, Yale programs, Yale labs, Yale funding).
-- Include the application deadline as YYYY-MM-DD when known (must be after today); if rolling or unknown, use null and say so in deadline_note.
-- Mix types and difficulty. 8 items.
+- The GOAL is a hard filter. Every item must satisfy every constraint stated in it: region or city, field, time of year, type of opportunity. If the goal says Europe, every item is in Europe. Never pad the list with near misses from another region, field or season.
+- ABOUT ME is a hard eligibility filter. Only include opportunities this student can apply to at their level and class year. An undergraduate sees only undergraduate opportunities: never graduate, PhD, postdoc or experienced-hire roles.
+- Return up to 8 items, best fit first. Return fewer rather than include one that breaks a rule above.
+- deadline: YYYY-MM-DD when you found it (must be after today), else null. deadline_note: a short plain fact such as "Rolling" or "Opens in January".
 Return ONLY JSON:
 { "opportunities": [ {
    "title": string, "org": string, "type": "internship"|"job"|"research"|"fellowship"|"program",
@@ -68,24 +75,27 @@ Return ONLY JSON:
 
 const DETAIL_SYSTEM = `You help a Yale student apply to ONE specific opportunity. Research it (official page, Yale OCS, employer events, public posts) and return what they need to act.
 Rules:
-- events: real upcoming dates only (after today): application deadline(s), info sessions, office hours, employer/Yale OCS events, networking events, recruiter coffee chats. date YYYY-MM-DD or null if unknown; set verified=true only if you saw the date on an official/primary source and include its url.
+- people: 3-5 real people the student should contact about THIS opportunity, found by search: the program director or coordinator, the faculty lead, a recruiter, Yale alumni or current students who did it. Real full names and titles from pages you found, with that page's url. name is the person's name only. For each: why they matter, one specific ask, and a message under 90 words. Return fewer if fewer real people can be found; never a placeholder.
+- events: real upcoming dates only (after today): application deadline(s), info sessions, office hours, employer/Yale OCS events, networking events, recruiter coffee chats. Only include an event when you found its date (YYYY-MM-DD); set verified=true only if you saw the date on an official/primary source and include its url.
 - checklist: 5-9 concrete, ordered steps to submit a strong application (materials, essays, recommenders, outreach, prep). Short imperative text.
 - next_actions: the 3 most important things to do THIS WEEK.
 - messages: 1-3 short drafts (under 90 words) to real or role-described people who can help (Yale alumni at the org, the program contact, a professor). One specific ask each. Never invent quotes.
 - keywords: 8-15 skills/terms the application and resume should reflect.
 Return ONLY JSON:
 { "summary": string, "eligibility": string,
+  "people": [ { "name": string, "role": string, "yale_tie": string, "why": string, "url": string, "ask": string, "subject": string, "message": string } ],
   "events": [ { "title": string, "kind": "deadline"|"info_session"|"office_hours"|"event"|"coffee_chat", "date": string|null, "time": string, "url": string, "verified": boolean } ],
   "checklist": [ { "id": string, "text": string, "kind": "application"|"outreach"|"prep" } ],
   "next_actions": [string],
   "messages": [ { "to": string, "why": string, "subject": string, "body": string } ],
   "keywords": [string] }`;
 
-const RESUME_PARSE_SYSTEM = `Convert a student's resume text (and optional LinkedIn profile export text) into structured JSON. Copy facts exactly; do NOT invent, embellish, or add numbers. Merge LinkedIn-only items into "other" or the right section and mark them with "source":"linkedin".
+const RESUME_PARSE_SYSTEM = `Convert a student's resume text (and, when given, their LinkedIn profile text) into structured JSON. Copy facts exactly; do NOT invent, embellish, or add numbers. Merge LinkedIn-only items into "other" or the right section and mark them with "source":"linkedin".
 Give every item and bullet a short unique id (e.g. "e1", "e1b2").
+"about" is a 2-3 sentence summary of the student, max 60 words: school, class year and majors; the two or three most significant things they have done; their strongest skills. Use only facts in the text.
 Return ONLY JSON:
 { "name": string, "contact": { "email": string, "phone": string, "location": string, "links": [string] },
-  "summary": string,
+  "summary": string, "about": string,
   "section_order": ["education","experience","projects","leadership","skills"],
   "education": [ { "id": string, "school": string, "degree": string, "dates": string, "location": string, "bullets": [ { "id": string, "text": string } ] } ],
   "experience": [ { "id": string, "org": string, "role": string, "dates": string, "location": string, "source": "resume"|"linkedin", "bullets": [ { "id": string, "text": string } ] } ],
@@ -121,6 +131,7 @@ const parseJSON = (s) => {
 // One model request. Returns the final answer text and how many web searches ran.
 async function ask(system, user, { tools, ms }) {
   const messages = [{ role: "user", content: user }];
+  const t0 = Date.now();
   let searches = 0;
   for (let turn = 0; ; turn++) {
     const res = await claude.beta.messages.create({
@@ -128,7 +139,7 @@ async function ask(system, user, { tools, ms }) {
       max_tokens: 16000,
       output_config: { effort: EFFORT },
       ...(FALLBACKS ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" } : {}),
-      system,
+      system: `${system}\n\n${VOICE}`,
       messages,
       ...(tools ? { tools } : {}),
     }, { timeout: ms });
@@ -138,14 +149,20 @@ async function ask(system, user, { tools, ms }) {
       messages.push({ role: "assistant", content: res.content });
       continue;
     }
+<<<<<<< Updated upstream
     if (res.stop_reason === "refusal") throw new Error("This request was declined. Try rephrasing your goal.");
     if (res.stop_reason === "max_tokens") throw new Error("The answer was cut off. Try again.");
+=======
+    if (res.stop_reason === "refusal") throw new Error("Bulldog couldn’t answer that one. Try rephrasing it.");
+    if (res.stop_reason === "max_tokens") throw new Error("That one ran too long. Try a narrower goal.");
+>>>>>>> Stashed changes
     // The answer is the text after the last search result; earlier text is commentary between searches.
     let text = [];
     for (const c of res.content) {
       if (c.type === "text") text.push(c.text);
       else if (c.type === "server_tool_use" || /tool_result$/.test(c.type)) text = [];
     }
+    console.log(`[model] ${((Date.now() - t0) / 1000).toFixed(1)}s · ${searches} searches · ${tools ? "search" : "plain"}`);
     return { text: text.join(""), searches, model: res.model || MODEL };
   }
 }
@@ -326,11 +343,24 @@ function publicBase(req) {
   return `${proto}://${req.headers["x-forwarded-host"] || req.headers.host}`;
 }
 
+// Who the student is, in a few lines, from what they saved: profile answers plus their resume.
+async function studentBrief(uid) {
+  const [p, r] = await Promise.all([store.profileGet(uid).catch(() => null), store.resumeGet(uid).catch(() => null)]);
+  const b = r?.base, ed = b?.education?.[0];
+  return [b?.name && `Name: ${b.name}`, p?.year && `${p.year} at Yale`, ed && [ed.degree, ed.school, ed.dates].filter(Boolean).join(", "), b?.about,
+    p?.fields?.length && `Interests: ${p.fields.join(", ")}`, p?.summer_goal && `Goal: ${p.summer_goal}`, (p?.linkedin_url || r?.linkedin_url) && `LinkedIn: ${p?.linkedin_url || r.linkedin_url}`].filter(Boolean).join("\n");
+}
+
 // Research one cart item (events, checklist, messages) in the background; never throws.
 async function enrich(user, item) {
   try {
     await bump(user, "detail");
-    const detail = DEMO ? demoDetail(item.opp) : await claudeJSON(DETAIL_SYSTEM, `OPPORTUNITY:\n${JSON.stringify(item.opp)}`, "Use web_search (official page, ocs.yale.edu, events.yale.edu) to find real deadlines, info sessions, and contacts.");
+    const detail = DEMO ? demoDetail(item.opp) : await claudeJSON(DETAIL_SYSTEM, `OPPORTUNITY:\n${JSON.stringify(item.opp)}\n\nSTUDENT (write every message as this student, using these facts; never leave a bracketed placeholder):\n${(await studentBrief(user.id)) || "A Yale undergraduate."}`, "Use web_search (official page, staff and people pages, ocs.yale.edu, events.yale.edu) to find real deadlines, info sessions, and the named people who run it.");
+    if (DEMO) detail.people ||= [
+      { name: "Maya Chen", role: "Program coordinator (example)", yale_tie: "Yale ’24 · Silliman", why: "Runs intake and answers applicant questions.", url: "", ask: "A 15-minute call about what makes an application stand out", subject: "Quick question before I apply", message: "Hi Maya — I’m a Yale sophomore applying this cycle. Could I ask you two questions about what the committee looks for? Fifteen minutes any day next week works for me." },
+      { name: "Jordan Patel", role: "Alum of the program (example)", yale_tie: "Yale ’21", why: "Did this exact program and can describe the day-to-day.", url: "", ask: "What they would do differently in the application", subject: "Yale student applying to your old program", message: "Hi Jordan — I’m a Yale sophomore applying to the program you did in 2020. What’s one thing you’d do differently in the application? A short reply would help a lot." },
+    ];
+    detail.people = (detail.people || []).filter((p) => p && cleanName(p.name)).slice(0, 6).map((p, i) => ({ id: "p" + i, name: clip(cleanName(p.name), 120), role: clip(p.role, 160), yale_tie: clip(p.yale_tie, 120), why: clip(p.why, 240), url: /^https?:\/\//.test(p.url || "") ? clip(p.url, 500) : "", ask: clip(p.ask, 200), subject: clip(p.subject, 200), message: clip(p.message, 1200) }));
     const safeUrl = (u) => (/^https?:\/\//.test(u || "") ? clip(u, 500) : "");
     const KINDS = ["deadline", "info_session", "office_hours", "event", "coffee_chat"];
     detail.events = (detail.events || []).filter((e) => e && e.title).slice(0, 12).map((e) => ({
@@ -361,6 +391,7 @@ function normalizeResume(r = {}) {
   });
   return {
     name: clip(r.name, 120), summary: clip(r.summary, 800),
+    about: clip(r.about, 500),
     contact: { email: clip(r.contact?.email, 120), phone: clip(r.contact?.phone, 40), location: clip(r.contact?.location, 120), links: (r.contact?.links || []).slice(0, 5).map((l) => clip(l, 200)) },
     section_order: (Array.isArray(r.section_order) && r.section_order.length ? r.section_order : ["education", "experience", "projects", "leadership", "skills"]).filter((s) => ["education", "experience", "projects", "leadership", "skills"].includes(s)),
     education: items(r.education, "ed", ["school", "degree", "dates", "location"]),
@@ -406,7 +437,8 @@ http
         if (!b.goal) return send(res, 400, { error: "Tell us your goal first." });
         const input = { goal: clip(b.goal, 300), about: clip(b.about, 1500), profiles: clip(b.profiles, 12000), liked: (Array.isArray(b.liked) ? b.liked : []).slice(0, 12) };
         const usage = await bump(user, "plan");
-        const plan = DEMO ? demoPlan(input.goal) : await claudeJSON(PLAN_SYSTEM, planPrompt(input), "Use web_search to find real, recent public posts, articles or news for hooks. Hook sources should include the post URL when you have one.");
+        const plan = DEMO ? demoPlan(input.goal) : await claudeJSON(PLAN_SYSTEM, planPrompt(input), "Use web_search to find the real, named people and recent public posts, articles or news for hooks. Hook sources should include the URL when you have one.");
+        if (!DEMO) for (const p of plan.people || []) p.name = cleanName(p.name);
         if (AUTH) {
           const [row] = await sb("plans", { method: "POST", prefer: "return=representation", body: { user_id: user.id, goal: input.goal, liked: input.liked, data: plan } });
           plan._id = row.id;
@@ -502,7 +534,7 @@ http
           const b = await readBody(req);
           const patch = {};
           if (CART_STATUSES.includes(b.status)) patch.status = b.status;
-          if (Array.isArray(b.done)) patch.done = b.done.slice(0, 50).map((x) => clip(x, 40));
+          if (Array.isArray(b.done)) patch.done = b.done.slice(0, 80).map((x) => clip(x, 40));
           const item = await store.cartUpdate(user.id, id, patch);
           return item ? send(res, 200, { item }) : send(res, 404, { error: "Not found" });
         }
@@ -540,7 +572,7 @@ http
         const resumeText = clip(b.resume_text, 30000), linkedinText = clip(b.linkedin_text, 30000);
         if (resumeText.length < 80 && linkedinText.length < 80) return send(res, 400, { error: "We couldn't read enough text from your files. Try a different PDF/DOCX." });
         await bump(user, "parse");
-        const base = DEMO ? demoResume() : await claudePlain(RESUME_PARSE_SYSTEM, `RESUME TEXT:\n${resumeText || "(none)"}\n\nLINKEDIN EXPORT TEXT:\n${linkedinText || "(none)"}`);
+        const base = DEMO ? demoResume() : await claudePlain(RESUME_PARSE_SYSTEM, `RESUME TEXT:\n${resumeText || "(none)"}\n\nLINKEDIN PROFILE:\n${linkedinText || "(none)"}`);
         const norm = normalizeResume(base), li = clip(b.linkedin_url, 300);
         // The student gives a profile link, not an export: put the link on the resume's contact line.
         if (li && Array.isArray(norm.contact?.links) && !norm.contact.links.some((l) => /linkedin\.com/i.test(l))) norm.contact.links.unshift(li);
