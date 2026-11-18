@@ -67,7 +67,7 @@ async function parseResume() {
   $("#wiznote").textContent = "Reading your resume…";
   try {
     const resume_text = await extractText(rf);
-    const { resume } = await call("/api/resume/parse", { body: { resume_text, linkedin_url: localStorage.bb_linkedin || "", source_names: [rf.name] } });
+    const { resume } = await call("/api/resume/parse", { body: { resume_text, source_names: [rf.name] } });
     RS.resume = resume; RS.parsedKey = key;
     paintOnboarding();
     toast("Resume ready — open My resume to check it");

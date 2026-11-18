@@ -34,11 +34,17 @@
   <!-- 2. LinkedIn -->
   <section class="ostep" data-step="linkedin" hidden>
     <div class="k">Step 2 of 5</div>
-    <h1 class="oh">Connect your LinkedIn.</h1>
-    <p class="op">Paste your profile link. It goes on your resume and into every message you send.</p>
-    <input id="o_lurl" class="oinput" type="text" inputmode="url" autocomplete="url" placeholder="linkedin.com/in/your-name" />
-    <div id="o_lerr" class="err"></div>
-    <div class="onav"><button class="linkbtn" onclick="go(-1)">Back</button><span></span><button class="linkbtn" onclick="go(1)">Skip</button><button class="cta ocont" onclick="linkedinContinue()">Continue →</button></div>
+    <h1 class="oh">Add your LinkedIn profile.</h1>
+    <p class="op">Upload the PDF of your profile. We combine it with your resume so nothing you’ve done gets left out.</p>
+    <div class="tiprow"><span class="tip" tabindex="0" role="button" aria-describedby="o_ltip">How do I get the PDF?<span class="tipbox" id="o_ltip" role="tooltip">
+      <b>Save your LinkedIn profile as a PDF</b>
+      <span>1. Open linkedin.com on a computer and go to your profile.</span>
+      <span>2. Under your name, click <b>Resources</b> (on some accounts it’s <b>More</b>).</span>
+      <span>3. Choose <b>Save to PDF</b>.</span>
+      <span>4. Upload the <b>Profile.pdf</b> it downloads here.</span>
+    </span></span></div>
+    <label class="drop odrop big"><b>💼 Your LinkedIn PDF</b><span id="o_lname">Profile.pdf from LinkedIn</span><input id="o_lfile" type="file" accept=".pdf" onchange="$('#o_lname').textContent=this.files[0]?.name||'Profile.pdf from LinkedIn'" /></label>
+    <div class="onav"><button class="linkbtn" onclick="go(-1)">Back</button><span></span><button class="linkbtn" onclick="$('#o_lfile').value='';$('#o_lname').textContent='Profile.pdf from LinkedIn';go(1)">Skip</button><button class="cta ocont" onclick="go(1)">Continue →</button></div>
   </section>
 
   <!-- 3. resume -->

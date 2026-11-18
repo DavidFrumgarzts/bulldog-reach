@@ -191,3 +191,10 @@
 .osum{margin:0 0 22px;padding:18px 20px;border-radius:18px;background:var(--glass);border:1px solid var(--stroke)}
 .osum p{margin:6px 0 0;font-size:16px;line-height:1.5}
 .osum small{display:block;margin-top:8px;color:var(--mute)}
+
+.tiprow{margin:-8px 0 18px}
+.tip{position:relative;display:inline-block;color:#fff;font-size:15px;font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:help;outline:none}
+.tipbox{display:none;position:absolute;left:0;top:calc(100% + 10px);z-index:20;width:min(380px,82vw);padding:16px 18px;border-radius:16px;background:#fff;color:#111;font-size:14px;font-weight:400;line-height:1.45;box-shadow:0 20px 40px rgba(0,0,0,.45);cursor:default}
+.tip:hover .tipbox,.tip:focus .tipbox,.tip:focus-within .tipbox{display:block}
+.tipbox>b{display:block;margin-bottom:6px}
+.tipbox>span{display:block;margin:4px 0}

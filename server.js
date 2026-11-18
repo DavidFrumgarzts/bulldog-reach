@@ -343,7 +343,7 @@ async function studentBrief(uid) {
   const [p, r] = await Promise.all([store.profileGet(uid).catch(() => null), store.resumeGet(uid).catch(() => null)]);
   const b = r?.base, ed = b?.education?.[0];
   return [b?.name && `Name: ${b.name}`, p?.year && `${p.year} at Yale`, ed && [ed.degree, ed.school, ed.dates].filter(Boolean).join(", "), b?.about,
-    p?.fields?.length && `Interests: ${p.fields.join(", ")}`, p?.summer_goal && `Goal: ${p.summer_goal}`, (p?.linkedin_url || r?.linkedin_url) && `LinkedIn: ${p?.linkedin_url || r.linkedin_url}`].filter(Boolean).join("\n");
+    p?.fields?.length && `Interests: ${p.fields.join(", ")}`, p?.summer_goal && `Goal: ${p.summer_goal}`].filter(Boolean).join("\n");
 }
 
 // Research one cart item (events, checklist, messages) in the background; never throws.
@@ -490,7 +490,6 @@ http
         const list = (v, n) => (Array.isArray(v) ? v : []).slice(0, n).map((x) => clip(x, 60));
         const profile = {
           fields: list(b.fields, 12), year: clip(b.year, 30), looking_for: list(b.looking_for, 8), locations: list(b.locations, 8),
-          linkedin_url: /^(https?:\/\/)?([a-z]+\.)?linkedin\.com\//i.test(b.linkedin_url || "") ? clip(b.linkedin_url, 300) : "",
           summer_goal: clip(b.summer_goal, 400), people: clip(b.people, 4000), onboarded: !!b.onboarded,
         };
         return send(res, 200, { profile: await store.profileSave(user.id, profile) });
@@ -568,10 +567,7 @@ http
         if (resumeText.length < 80 && linkedinText.length < 80) return send(res, 400, { error: "We couldn't read enough text from your files. Try a different PDF/DOCX." });
         await bump(user, "parse");
         const base = DEMO ? demoResume() : await claudePlain(RESUME_PARSE_SYSTEM, `RESUME TEXT:\n${resumeText || "(none)"}\n\nLINKEDIN PROFILE:\n${linkedinText || "(none)"}`);
-        const norm = normalizeResume(base), li = clip(b.linkedin_url, 300);
-        // The student gives a profile link, not an export: put the link on the resume's contact line.
-        if (li && Array.isArray(norm.contact?.links) && !norm.contact.links.some((l) => /linkedin\.com/i.test(l))) norm.contact.links.unshift(li);
-        const saved = await store.resumeSave(user.id, { base: norm, linkedin_url: li, source_names: (b.source_names || []).slice(0, 4).map((s) => clip(s, 120)) });
+        const saved = await store.resumeSave(user.id, { base: normalizeResume(base), source_names: (b.source_names || []).slice(0, 4).map((s) => clip(s, 120)) });
         return send(res, 200, { resume: saved });
       }
       if (url === "/api/resume" && req.method === "PUT") {

@@ -31,7 +31,6 @@ function showOnboarding(step) {
   const vs = visibleSteps(), i = vs.indexOf(step);
   $("#dots").innerHTML = vs.map((_, j) => `<i class="${j <= i ? "on" : ""}"></i>`).join("");
   document.querySelectorAll(".ostep .k").forEach((k) => { const st = k.closest(".ostep").dataset.step; const n = vs.indexOf(st); if (st !== "email" && st !== "goal") k.textContent = `Step ${n + 1} of ${vs.length}`; });
-  if (step === "linkedin" && APP.profile?.linkedin_url) $("#o_lurl").value ||= APP.profile.linkedin_url;
   if (step === "about") { prefillChips(); paintSummary(); }
   if (step === "goal") { paintSuggestions(); $("#o_goal").value ||= APP.profile?.summer_goal || ""; $("#o_people").value ||= APP.profile?.people || ""; setTimeout(() => $("#o_goal").focus(), 50); }
   window.scrollTo(0, 0);
@@ -44,33 +43,25 @@ function go(delta) {
 }
 
 
-function linkedinContinue() {
-  let u = $("#o_lurl").value.trim();
-  if (u && !/linkedin\.com\/in\/[^\s/]+/i.test(u)) return ($("#o_lerr").textContent = "Use your profile link, like linkedin.com/in/your-name.");
-  if (u && !/^https?:\/\//i.test(u)) u = "https://" + u;
-  $("#o_lerr").textContent = ""; $("#o_lurl").value = u;
-  go(1);
-}
-
-// Resume is read in the background as soon as it's chosen, so the student keeps answering questions.
+// The resume and the LinkedIn PDF are read together, in the background, so the student keeps answering questions.
 async function parseInBackground() {
-  const rf = $("#o_rfile").files[0];
-  const key = rf && rf.name + ":" + rf.size;
-  if (!rf || RS.parsing || RS.parsedKey === key) return RS.parsing;
-  $("#o_rerr").textContent = ""; $("#o_rnote").textContent = "Reading your resume in the background…";
+  const rf = $("#o_rfile").files[0], lf = $("#o_lfile").files[0];
+  const key = [rf, lf].map((f) => (f ? f.name + ":" + f.size : "")).join("|");
+  if ((!rf && !lf) || RS.parsing || RS.parsedKey === key) return RS.parsing;
+  $("#o_rerr").textContent = ""; $("#o_rnote").textContent = rf && lf ? "Reading your resume and LinkedIn in the background…" : rf ? "Reading your resume in the background…" : "Reading your LinkedIn in the background…";
   RS.parsing = (async () => {
     try {
-      const resume_text = await extractText(rf);
-      const { resume } = await call("/api/resume/parse", { body: { resume_text, linkedin_url: $("#o_lurl").value.trim(), source_names: [rf.name] } });
+      const [resume_text, linkedin_text] = await Promise.all([extractText(rf), extractText(lf)]);
+      const { resume } = await call("/api/resume/parse", { body: { resume_text, linkedin_text, source_names: [rf?.name, lf?.name].filter(Boolean) } });
       RS.resume = resume; RS.parsedKey = key; paintOnboarding(); paintSummary();
       $("#o_rnote").textContent = `✓ Read: ${resume.base.experience.length} experiences, ${resume.base.education.length} schools`;
-    } catch (e) { $("#o_rnote").textContent = ""; $("#o_rerr").textContent = "Couldn’t read your resume: " + e.message; }
+    } catch (e) { $("#o_rnote").textContent = ""; $("#o_rerr").textContent = "Couldn’t read your files: " + e.message; }
     finally { RS.parsing = null; }
   })();
   return RS.parsing;
 }
 async function parseAndContinue() {
-  if (!$("#o_rfile").files[0]) return afterResume();
+  if (!$("#o_rfile").files[0] && !$("#o_lfile").files[0]) return afterResume();
   const p = parseInBackground();
   if (APP.returnToApp) { $("#o_rbtn").disabled = true; await p; $("#o_rbtn").disabled = false; } // re-upload from the app: wait, then open it
   if (!$("#o_rerr").textContent) afterResume();
@@ -78,15 +69,16 @@ async function parseAndContinue() {
 // resume.js (Alwis's version) asks for the onboarding wizard by this name.
 function openWiz(step) { $("#rw").hidden = true; APP.returnToApp = true; showOnboarding(step === "resume" ? "resume" : step); }
 function afterResume() {
+  parseInBackground();
   if (APP.returnToApp) { APP.returnToApp = false; showShell(); if (RS.resume?.base) openResume(); return; }
   go(1);
 }
 
 // "About you" opens with what the resume and LinkedIn link already told us, as one short paragraph.
 function paintSummary() {
-  const about = RS.resume?.base?.about, li = $("#o_lurl").value.trim() || APP.profile?.linkedin_url;
+  const about = RS.resume?.base?.about;
   $("#o_sum").hidden = !about;
-  if (about) $("#o_sum").innerHTML = `<div class="ol">What we know so far</div><p>${esc(about)}</p>${li ? `<small>${esc(li.replace(/^https?:\/\/(www\.)?/, ""))}</small>` : ""}`;
+  if (about) $("#o_sum").innerHTML = `<div class="ol">What we know so far</div><p>${esc(about)}</p>`;
 }
 
 // chips: single or multi select
@@ -135,7 +127,7 @@ async function finishOnboarding() {
   if (!goal) return $("#o_goal").focus();
   const a = Object.keys(APP.answers).length ? APP.answers : APP.profile || {};
   try {
-    const { profile } = await call("/api/profile", { method: "PUT", body: { ...a, linkedin_url: $("#o_lurl").value.trim() || APP.profile?.linkedin_url || "", people: $("#o_people").value.trim() || APP.profile?.people || "", summer_goal: goal, onboarded: true } });
+    const { profile } = await call("/api/profile", { method: "PUT", body: { ...a, people: $("#o_people").value.trim() || APP.profile?.people || "", summer_goal: goal, onboarded: true } });
     APP.profile = profile;
   } catch (e) { return toast(e.message); }
   setAbout();
