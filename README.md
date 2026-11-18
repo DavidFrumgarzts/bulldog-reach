@@ -2,6 +2,10 @@
 
 **Don't network. Get where you're going.**
 
+[![Bulldog Reach demo: click to watch the full video](docs/demo-preview.gif)](docs/demo.mp4)
+
+▶ **[Watch the full 1-minute demo](docs/demo.mp4)** · Try it live: https://bulldog-reach.onrender.com
+
 Bulldog Reach turns a Yale student's goal into a concrete plan, using Claude with live web search:
 
 1. **Set a goal.** For example: "Work on Grok at SpaceXSI this summer", "Join a comp-bio lab as a sophomore", "Break into climate VC".
@@ -22,7 +26,7 @@ Built in about 2 hours at the **y/cs × SpaceXSI Grokathon**, Yale, November 17,
 
 ## Demo video
 
-A one-minute walkthrough: [docs/demo.mp4](docs/demo.mp4).
+The preview at the top plays at 3× speed. Full one-minute walkthrough with sound: [docs/demo.mp4](docs/demo.mp4).
 
 ## Built with Grok CLI
 
