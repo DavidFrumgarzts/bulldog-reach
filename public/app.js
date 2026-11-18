@@ -56,8 +56,9 @@ async function parseInBackground() {
       RS.resume = resume; RS.parsedKey = key; paintOnboarding(); paintSummary();
       $("#o_rnote").textContent = `✓ Read: ${resume.base.experience.length} experiences, ${resume.base.education.length} schools`;
     } catch (e) { $("#o_rnote").textContent = ""; $("#o_rerr").textContent = "Couldn’t read your files: " + e.message; }
-    finally { RS.parsing = null; }
+    finally { RS.parsing = null; paintSummary(); }
   })();
+  paintSummary();
   return RS.parsing;
 }
 async function parseAndContinue() {
@@ -77,8 +78,9 @@ function afterResume() {
 // "About you" opens with what the resume and LinkedIn link already told us, as one short paragraph.
 function paintSummary() {
   const about = RS.resume?.base?.about;
-  $("#o_sum").hidden = !about;
-  if (about) $("#o_sum").innerHTML = `<div class="ol">What we know so far</div><p>${esc(about)}</p>`;
+  $("#o_sum").hidden = !about && !RS.parsing;
+  if (RS.parsing) $("#o_sum").innerHTML = `<div class="ol">What we know so far</div><p class="loading" style="padding:0;font-size:16px"><i></i>Putting your profile together…</p>`;
+  else if (about) $("#o_sum").innerHTML = `<div class="ol">What we know so far</div><p>${esc(about)}</p>`;
 }
 
 // chips: single or multi select
