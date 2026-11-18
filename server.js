@@ -1,4 +1,4 @@
-// Bulldog Reach — goal-first outreach for Yale students, powered by Claude.
+// Bulldog Reach — goal-first outreach for Yale students.
 // One dependency (the Anthropic SDK): `npm install`, `node server.js`, then open http://localhost:3000
 const http = require("http");
 const fs = require("fs");
@@ -118,7 +118,7 @@ const parseJSON = (s) => {
   return JSON.parse(m ? m[0] : s);
 };
 
-// One Claude request. Returns the final answer text and how many web searches ran.
+// One model request. Returns the final answer text and how many web searches ran.
 async function ask(system, user, { tools, ms }) {
   const messages = [{ role: "user", content: user }];
   let searches = 0;
@@ -138,8 +138,8 @@ async function ask(system, user, { tools, ms }) {
       messages.push({ role: "assistant", content: res.content });
       continue;
     }
-    if (res.stop_reason === "refusal") throw new Error("Claude declined this request.");
-    if (res.stop_reason === "max_tokens") throw new Error("Claude's answer was cut off before it finished.");
+    if (res.stop_reason === "refusal") throw new Error("This request was declined. Try rephrasing your goal.");
+    if (res.stop_reason === "max_tokens") throw new Error("The answer was cut off. Try again.");
     // The answer is the text after the last search result; earlier text is commentary between searches.
     let text = [];
     for (const c of res.content) {
@@ -150,7 +150,7 @@ async function ask(system, user, { tools, ms }) {
   }
 }
 
-// Ask Claude for JSON with live web search; fall back to a plain call if search fails.
+// Ask the model for JSON with live web search; fall back to a plain call if search fails.
 async function claudeJSON(system, user, searchHint) {
   const sys = `${system}\n\nToday is ${today()}.`;
   try {
@@ -231,7 +231,7 @@ const LIMITS = {
   tailor: +process.env.DAILY_TAILOR_LIMIT || 20,
   parse: +process.env.DAILY_PARSE_LIMIT || 6,
 };
-const MONTHLY_CAP = +process.env.MONTHLY_CALL_CAP || 3000; // total Claude calls across all users per month
+const MONTHLY_CAP = +process.env.MONTHLY_CALL_CAP || 3000; // total model calls across all users per month
 const STATUSES = ["todo", "sent", "replied", "meeting", "referred", "no_reply"];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

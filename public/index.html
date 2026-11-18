@@ -80,7 +80,7 @@
 <script>
 fetch("/api/config").then((r) => r.json()).then((c) => {
   const el = document.getElementById("status");
-  el.innerHTML = "<i></i>" + (c.demo ? "demo mode" : "Claude live");
+  el.innerHTML = "<i></i>" + (c.demo ? "demo mode" : "live");
   if (!c.demo) el.classList.add("live");
 });
 </script>

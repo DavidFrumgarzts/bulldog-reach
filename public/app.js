@@ -130,7 +130,7 @@ async function finishOnboarding() {
 }
 function editProfile() { APP.answers = {}; showOnboarding("about"); }
 
-// Everything Claude should know about the student (sent as "about me" with each request).
+// Everything the model should know about the student (sent as "about me" with each request).
 function setAbout() {
   const p = APP.profile || {};
   const bits = [p.year && `${p.year} at Yale`, p.fields?.length && `Interests: ${p.fields.join(", ")}`, p.looking_for?.length && `Looking for: ${p.looking_for.join(", ")}`,
