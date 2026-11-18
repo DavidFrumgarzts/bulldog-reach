@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bulldog Reach</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/styles.css" />
+<link rel="stylesheet" href="/app.css" />
+</head>
+<body class="appbody">
+
+<!-- ================= ONBOARDING ================= -->
+<div id="onb" class="onb" hidden>
+  <div class="onbtop"><a href="/" class="logo" style="text-decoration:none;color:#fff">B_</a><div class="dots" id="dots"></div><span></span></div>
+
+  <!-- 1. email -->
+  <section class="ostep" data-step="email">
+    <div class="k">Welcome to Bulldog Reach</div>
+    <h1 class="oh">Let’s get you set up.</h1>
+    <p class="op">Sign in with your Yale email — we’ll send you a code. No password.</p>
+    <div id="authbox" class="authbox bare">
+      <div id="authstep">
+        <form id="authform" class="authform" onsubmit="sendCode(event)">
+          <input id="email" type="email" placeholder="you@yale.edu" autocomplete="email" required />
+          <button class="cta" id="authbtn">Continue →</button>
+        </form>
+      </div>
+      <div id="autherr" class="err" style="margin-top:10px"></div>
+    </div>
+  </section>
+
+  <!-- 2. LinkedIn -->
+  <section class="ostep" data-step="linkedin" hidden>
+    <div class="k">Step 2 of 5</div>
+    <h1 class="oh">Connect your LinkedIn.</h1>
+    <p class="op">Paste your profile link, and (optional, but much better) upload LinkedIn’s PDF of your profile: <b>LinkedIn → your profile → Resources / More → Save to PDF</b>.</p>
+    <input id="o_lurl" class="oinput" type="url" placeholder="linkedin.com/in/your-name" />
+    <label class="drop odrop"><b>LinkedIn profile PDF</b><span id="o_lname">Optional · drop or choose a file</span><input id="o_lfile" type="file" accept=".pdf" onchange="$('#o_lname').textContent=this.files[0]?.name||''" /></label>
+    <div class="onav"><button class="linkbtn" onclick="go(-1)">Back</button><span></span><button class="linkbtn" onclick="go(1)">Skip</button><button class="cta ocont" onclick="go(1)">Continue →</button></div>
+  </section>
+
+  <!-- 3. resume -->
+  <section class="ostep" data-step="resume" hidden>
+    <div class="k">Step 3 of 5</div>
+    <h1 class="oh">Upload your resume.</h1>
+    <p class="op">Claude reads it once and tailors a version for every opportunity you save — only as suggestions you approve.</p>
+    <label class="drop odrop big"><b>📄 Your resume</b><span id="o_rname">PDF or Word (.docx)</span><input id="o_rfile" type="file" accept=".pdf,.docx,.txt" onchange="$('#o_rname').textContent=this.files[0]?.name||''" /></label>
+    <div id="o_rerr" class="err"></div>
+    <div class="onav"><button class="linkbtn" onclick="go(-1)">Back</button><span></span><button class="linkbtn" onclick="go(1)">Skip for now</button><button class="cta ocont" id="o_rbtn" onclick="parseAndContinue()">Continue →</button></div>
+  </section>
+
+  <!-- 4. about you -->
+  <section class="ostep" data-step="about" hidden>
+    <div class="k">Step 4 of 5</div>
+    <h1 class="oh">Tell us about you.</h1>
+    <div class="oq"><div class="ol">What are you into? <small>pick any</small></div><div class="chips2" data-k="fields" data-multi="1">
+      <button>💻 Software / Tech</button><button>🤖 AI / ML</button><button>📈 Finance</button><button>🧭 Consulting</button><button>🔬 STEM research</button><button>📚 Humanities / social science research</button><button>🏛️ Policy / Government</button><button>🚀 Startups / VC</button><button>🧬 Health / Bio</button><button>🌍 Climate / Energy</button><button>🎨 Media / Arts / Design</button><button>🤝 Nonprofit / Social impact</button>
+    </div></div>
+    <div class="oq"><div class="ol">What year are you?</div><div class="chips2" data-k="year">
+      <button>First-year</button><button>Sophomore</button><button>Junior</button><button>Senior</button><button>Grad student</button>
+    </div></div>
+    <div class="oq"><div class="ol">What are you looking for? <small>pick any</small></div><div class="chips2" data-k="looking_for" data-multi="1">
+      <button>Internship</button><button>Research position</button><button>Fellowship / funding</button><button>Summer program</button><button>Study abroad</button><button>Full-time job</button>
+    </div></div>
+    <div class="oq"><div class="ol">Where? <small>optional</small></div><div class="chips2" data-k="locations" data-multi="1">
+      <button>New Haven</button><button>New York</button><button>Bay Area</button><button>Boston</button><button>DC</button><button>Remote</button><button>Abroad</button><button>Anywhere</button>
+    </div></div>
+    <div id="o_aerr" class="err"></div>
+    <div class="onav"><button class="linkbtn" onclick="go(-1)">Back</button><span></span><button class="cta ocont" onclick="aboutContinue()">Continue →</button></div>
+  </section>
+
+  <!-- 5. goal -->
+  <section class="ostep" data-step="goal" hidden>
+    <div class="k">Last step</div>
+    <h1 class="oh">What do you want to achieve this summer?</h1>
+    <textarea id="o_goal" class="ogoal" rows="3" placeholder="I want to land an AI internship this summer…"></textarea>
+    <div class="chips2 sugg" id="o_sugg"></div>
+    <div class="onav"><button class="linkbtn" onclick="go(-1)">Back</button><span></span><button class="cta ocont" onclick="finishOnboarding()">Let’s go →</button></div>
+  </section>
+</div>
+
+<!-- ================= APP (chat) ================= -->
+<div id="shell" class="shell" hidden>
+  <aside class="side" id="side">
+    <div class="sidetop"><a href="/" class="logo" style="text-decoration:none;color:#fff">B_</a><span class="sidebrand">Bulldog Reach</span></div>
+    <button class="newchat" onclick="newChat()">＋ New chat</button>
+    <nav class="sidenav">
+      <button onclick="openList()">📌 My list <b id="cartcount" class="badge"></b></button>
+      <button id="resumebtn" onclick="openResume()">📄 My resume</button>
+      <button onclick="openCalendar()">📅 Calendar sync</button>
+    </nav>
+    <div class="sidelabel">Chats</div>
+    <div id="histlist" class="histlist side-hist"></div>
+    <div class="sidefoot">
+      <div class="row3" style="justify-content:space-between"><span id="status" class="status"><i></i>…</span><span id="usage" class="usage"></span></div>
+      <div id="me" class="me side-me"></div>
+      <button class="linkbtn" style="font-size:13px" onclick="editProfile()">Edit profile & goal</button>
+    </div>
+  </aside>
+  <main class="main">
+    <button class="sidetoggle" onclick="$('#side').classList.toggle('open')">☰</button>
+    <div id="thread" class="thread"></div>
+    <form id="composer" class="composer" onsubmit="ask(event)">
+      <textarea id="ask" rows="1" placeholder="Ask for opportunities, e.g. “paid AI research this summer”"></textarea>
+      <button class="send" aria-label="Send">↑</button>
+    </form>
+    <div class="composer-note">Claude can be wrong — check dates and links on the official page.</div>
+  </main>
+</div>
+
+<!-- ================= parked singletons (moved into chat messages when used) ================= -->
+<div id="park" hidden>
+  <form id="f"><input id="goal" /><textarea id="about"></textarea><textarea id="profiles"></textarea><button id="btn"></button></form>
+  <button id="skip"></button>
+  <span id="err"></span>
+  <form id="onboard" hidden></form>
+  <section id="deck" class="decksec inchat" hidden>
+    <div class="deckgrid">
+      <div>
+        <h2 class="deckh">Which of these do you want?</h2>
+        <p class="why" style="font-size:15px;margin:8px 0 0">Swipe right to save to your list — I’ll find its deadlines and info sessions and put them on your calendar.</p>
+        <div class="likes" id="likes"></div>
+        <div class="deckcta">
+          <button class="cta" id="planbtn" disabled>Build my plan →</button>
+          <button type="button" class="linkbtn" id="more">More options</button>
+        </div>
+        <div class="keys">← / → keys work too</div>
+      </div>
+      <div class="deckcol">
+        <div class="stack" id="stack"></div>
+        <div class="swbtns">
+          <button class="swb no" id="nobtn" aria-label="Pass">✕</button>
+          <button class="swb yes" id="yesbtn" aria-label="Like">♥</button>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section id="out"></section>
+  <div id="authbox-dummy"></div>
+</div>
+
+<div id="history" class="modal" hidden></div>
+<div id="listmodal" class="modal" hidden onclick="if(event.target===this)this.hidden=true">
+  <div class="sheet wide">
+    <div class="sheethead"><div><div class="k" style="margin:0">Your list · by priority</div><h2 style="font-size:32px;margin:4px 0 0">Focus on these.</h2></div><button class="linkbtn" onclick="$('#listmodal').hidden=true">Close</button></div>
+    <button class="calbtn" style="margin-bottom:16px" onclick="openCalendar()">📅 Sync all dates to Google Calendar</button>
+    <section id="list" class="listsec inmodal" hidden><div id="listrows" class="listrows"></div></section>
+    <p id="listempty" class="why">Nothing saved yet. Swipe right on an opportunity in a chat to add it here.</p>
+  </div>
+</div>
+<div id="item" class="modal" hidden onclick="if(event.target===this){this.hidden=true;CART.open=null}">
+  <div class="sheet wide"><div class="sheethead"><span></span><button class="linkbtn" onclick="$('#item').hidden=true;CART.open=null">Close</button></div><div id="itembody"></div></div>
+</div>
+<div id="calmodal" class="modal" hidden onclick="if(event.target===this)this.hidden=true">
+  <div class="sheet"><div class="sheethead"><h2 style="font-size:30px">Calendar sync</h2><button class="linkbtn" onclick="$('#calmodal').hidden=true">Close</button></div><div id="calbody"></div></div>
+</div>
+<div id="rw" class="rw" hidden>
+  <div class="rwbar">
+    <div><div class="k" style="margin:0">Resume</div><div id="rwtitle" class="rwtitle"></div></div>
+    <div class="row3"><span id="rwsave" class="why">Saved ✓</span>
+      <button class="glassbtn smallbtn" onclick="downloadDocx()">Download Word</button>
+      <button class="whitebtn smallbtn" onclick="downloadPdf()">Download PDF</button>
+      <button class="linkbtn" onclick="$('#rw').hidden=true">Close</button></div>
+  </div>
+  <div class="rwgrid"><div id="rwdoc" class="rwdoc"></div><aside id="rwside" class="rwside"></aside></div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script src="/core.js"></script>
+<script src="/cart.js"></script>
+<script src="/resume.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

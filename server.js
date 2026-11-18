@@ -221,7 +221,7 @@ function demoPlan(goal) {
 const SB_URL = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
 const SB_ANON = process.env.SUPABASE_ANON_KEY || "";
 const SB_SERVICE = process.env.SUPABASE_SERVICE_KEY || "";
-const AUTH = !!(SB_URL && SB_ANON && SB_SERVICE);
+const AUTH = !!(SB_URL && SB_ANON && SB_SERVICE) && process.env.AUTH_OFF !== "1"; // AUTH_OFF=1 for local testing only
 const DOMAIN = (process.env.ALLOWED_DOMAIN || "yale.edu").toLowerCase();
 const LIMITS = {
   plan: +process.env.DAILY_PLAN_LIMIT || 10,
@@ -450,6 +450,23 @@ http
         return send(res, 200, { ok: true });
       }
 
+      // ---------------- profile (onboarding answers) ----------------
+      if (url === "/api/profile" && req.method === "GET") {
+        const user = await guard(req);
+        return send(res, 200, { profile: await store.profileGet(user.id), email: user.email });
+      }
+      if (url === "/api/profile" && req.method === "PUT") {
+        const user = await guard(req);
+        const b = await readBody(req);
+        const list = (v, n) => (Array.isArray(v) ? v : []).slice(0, n).map((x) => clip(x, 60));
+        const profile = {
+          fields: list(b.fields, 12), year: clip(b.year, 30), looking_for: list(b.looking_for, 8), locations: list(b.locations, 8),
+          linkedin_url: /^(https?:\/\/)?([a-z]+\.)?linkedin\.com\//i.test(b.linkedin_url || "") ? clip(b.linkedin_url, 300) : "",
+          summer_goal: clip(b.summer_goal, 400), onboarded: !!b.onboarded,
+        };
+        return send(res, 200, { profile: await store.profileSave(user.id, profile) });
+      }
+
       // ---------------- cart ("shopping cart" of opportunities) ----------------
       if (url === "/api/cart" && req.method === "GET") {
         const user = await guard(req);
@@ -569,7 +586,7 @@ http
       if (!(e instanceof HttpError)) console.error(e);
       return send(res, e.status && e.status < 600 ? e.status : 500, { error: e.message });
     }
-    const file = path.join(__dirname, "public", url === "/" || url === "/auth/confirm" ? "index.html" : url);
+    const file = path.join(__dirname, "public", url === "/" ? "index.html" : url === "/app" || url === "/auth/confirm" ? "app.html" : url);
     if (!file.startsWith(path.join(__dirname, "public")) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
       res.writeHead(404);
       return res.end("not found");

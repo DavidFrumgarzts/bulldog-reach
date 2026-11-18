@@ -100,3 +100,13 @@ alter table public.resumes    enable row level security;
 alter table public.tailored   enable row level security;
 grant select, insert, update, delete on public.cart_items, public.cal_tokens, public.resumes, public.tailored to service_role;
 revoke all on public.cart_items, public.cal_tokens, public.resumes, public.tailored from anon, authenticated;
+
+-- ---------- v3: onboarding profile ----------
+create table if not exists public.profiles (
+  user_id     uuid primary key references auth.users on delete cascade,
+  data        jsonb not null,
+  updated_at  timestamptz not null default now()
+);
+alter table public.profiles enable row level security;
+grant select, insert, update, delete on public.profiles to service_role;
+revoke all on public.profiles from anon, authenticated;
