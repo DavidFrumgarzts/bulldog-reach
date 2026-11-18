@@ -35,32 +35,26 @@
   <section class="ostep" data-step="linkedin" hidden>
     <div class="k">Step 2 of 5</div>
     <h1 class="oh">Connect your LinkedIn.</h1>
-    <p class="op">Paste your profile link. It goes on your resume and into every message you send.</p>
-    <input id="o_lurl" class="oinput" type="text" inputmode="url" autocomplete="url" placeholder="linkedin.com/in/your-name" />
-    <div id="o_lerr" class="err"></div>
-    <div class="onav"><button class="linkbtn" onclick="go(-1)">Back</button><span></span><button class="linkbtn" onclick="go(1)">Skip</button><button class="cta ocont" onclick="linkedinContinue()">Continue →</button></div>
+    <p class="op">Paste your profile link. We add it to your resume’s contact line — the app doesn’t read your LinkedIn profile.</p>
+    <input id="o_lurl" class="oinput" type="url" placeholder="linkedin.com/in/your-name" />
+    <div class="onav"><button class="linkbtn" onclick="go(-1)">Back</button><span></span><button class="linkbtn" onclick="go(1)">Skip</button><button class="cta ocont" onclick="go(1)">Continue →</button></div>
   </section>
 
   <!-- 3. resume -->
   <section class="ostep" data-step="resume" hidden>
     <div class="k">Step 3 of 5</div>
     <h1 class="oh">Upload your resume.</h1>
-<<<<<<< Updated upstream
     <p class="op">Used to tailor a version for each job you save. Nothing changes without your OK.</p>
-=======
-    <p class="op">Bulldog reads it once and tailors a version for every opportunity you save. You approve every edit.</p>
->>>>>>> Stashed changes
     <label class="drop odrop big"><b>📄 Your resume</b><span id="o_rname">PDF or Word (.docx)</span><input id="o_rfile" type="file" accept=".pdf,.docx,.txt" onchange="$('#o_rname').textContent=this.files[0]?.name||'';parseInBackground()" /></label>
     <div id="o_rnote" class="why"></div>
     <div id="o_rerr" class="err"></div>
-    <div class="onav"><button class="linkbtn" onclick="go(-1)">Back</button><span></span><button class="linkbtn" onclick="afterResume()">Skip for now</button><button class="cta ocont" id="o_rbtn" onclick="parseAndContinue()">Continue →</button></div>
+    <div class="onav"><button class="linkbtn" onclick="go(-1)">Back</button><span></span><button class="linkbtn" onclick="go(1)">Skip for now</button><button class="cta ocont" id="o_rbtn" onclick="parseAndContinue()">Continue →</button></div>
   </section>
 
   <!-- 4. about you -->
   <section class="ostep" data-step="about" hidden>
     <div class="k">Step 4 of 5</div>
     <h1 class="oh">Tell us about you.</h1>
-    <div id="o_sum" class="osum" hidden></div>
     <div class="oq"><div class="ol">What are you into? <small>pick any</small></div><div class="chips2" data-k="fields" data-multi="1">
       <button>💻 Software / Tech</button><button>🤖 AI / ML</button><button>📈 Finance</button><button>🧭 Consulting</button><button>🔬 STEM research</button><button>📚 Humanities / social science research</button><button>🏛️ Policy / Government</button><button>🚀 Startups / VC</button><button>🧬 Health / Bio</button><button>🌍 Climate / Energy</button><button>🎨 Media / Arts / Design</button><button>🤝 Nonprofit / Social impact</button>
     </div></div>
@@ -102,7 +96,7 @@
     <div class="sidelabel">Chats</div>
     <div id="histlist" class="histlist side-hist"></div>
     <div class="sidefoot">
-      <div class="row3" style="justify-content:space-between"><span id="status" class="status" hidden></span><span id="usage" class="usage"></span></div>
+      <div class="row3" style="justify-content:space-between"><span id="status" class="status"><i></i>…</span><span id="usage" class="usage"></span></div>
       <div id="me" class="me side-me"></div>
       <button class="linkbtn" style="font-size:13px" onclick="editProfile()">Edit profile & goal</button>
     </div>
@@ -114,10 +108,7 @@
       <textarea id="ask" rows="1" placeholder="Ask for opportunities, e.g. “paid AI research this summer”"></textarea>
       <button class="send" aria-label="Send">↑</button>
     </form>
-<<<<<<< Updated upstream
     <div class="composer-note">Confirm dates and links on the official page.</div>
-=======
->>>>>>> Stashed changes
   </main>
 </div>
 

@@ -32,7 +32,7 @@ function showOnboarding(step) {
   $("#dots").innerHTML = vs.map((_, j) => `<i class="${j <= i ? "on" : ""}"></i>`).join("");
   document.querySelectorAll(".ostep .k").forEach((k) => { const st = k.closest(".ostep").dataset.step; const n = vs.indexOf(st); if (st !== "email" && st !== "goal") k.textContent = `Step ${n + 1} of ${vs.length}`; });
   if (step === "linkedin" && APP.profile?.linkedin_url) $("#o_lurl").value ||= APP.profile.linkedin_url;
-  if (step === "about") { prefillChips(); paintSummary(); }
+  if (step === "about") prefillChips();
   if (step === "goal") { paintSuggestions(); $("#o_goal").value ||= APP.profile?.summer_goal || ""; $("#o_people").value ||= APP.profile?.people || ""; setTimeout(() => $("#o_goal").focus(), 50); }
   window.scrollTo(0, 0);
 }
@@ -44,14 +44,6 @@ function go(delta) {
 }
 
 
-function linkedinContinue() {
-  let u = $("#o_lurl").value.trim();
-  if (u && !/linkedin\.com\/in\/[^\s/]+/i.test(u)) return ($("#o_lerr").textContent = "Use your profile link, like linkedin.com/in/your-name.");
-  if (u && !/^https?:\/\//i.test(u)) u = "https://" + u;
-  $("#o_lerr").textContent = ""; $("#o_lurl").value = u;
-  go(1);
-}
-
 // Resume is read in the background as soon as it's chosen, so the student keeps answering questions.
 async function parseInBackground() {
   const rf = $("#o_rfile").files[0];
@@ -62,7 +54,7 @@ async function parseInBackground() {
     try {
       const resume_text = await extractText(rf);
       const { resume } = await call("/api/resume/parse", { body: { resume_text, linkedin_url: $("#o_lurl").value.trim(), source_names: [rf.name] } });
-      RS.resume = resume; RS.parsedKey = key; paintOnboarding(); paintSummary();
+      RS.resume = resume; RS.parsedKey = key; paintOnboarding();
       $("#o_rnote").textContent = `✓ Read: ${resume.base.experience.length} experiences, ${resume.base.education.length} schools`;
     } catch (e) { $("#o_rnote").textContent = ""; $("#o_rerr").textContent = "Couldn’t read your resume: " + e.message; }
     finally { RS.parsing = null; }
@@ -80,13 +72,6 @@ function openWiz(step) { $("#rw").hidden = true; APP.returnToApp = true; showOnb
 function afterResume() {
   if (APP.returnToApp) { APP.returnToApp = false; showShell(); if (RS.resume?.base) openResume(); return; }
   go(1);
-}
-
-// "About you" opens with what the resume and LinkedIn link already told us, as one short paragraph.
-function paintSummary() {
-  const about = RS.resume?.base?.about, li = $("#o_lurl").value.trim() || APP.profile?.linkedin_url;
-  $("#o_sum").hidden = !about;
-  if (about) $("#o_sum").innerHTML = `<div class="ol">What we know so far</div><p>${esc(about)}</p>${li ? `<small>${esc(li.replace(/^https?:\/\/(www\.)?/, ""))}</small>` : ""}`;
 }
 
 // chips: single or multi select
@@ -145,11 +130,7 @@ async function finishOnboarding() {
 }
 function editProfile() { APP.answers = {}; showOnboarding("about"); }
 
-<<<<<<< Updated upstream
 // Everything the model should know about the student (sent as "about me" with each request).
-=======
-// Everything Bulldog should know about the student (sent as "about me" with each request).
->>>>>>> Stashed changes
 function setAbout() {
   const p = APP.profile || {};
   const bits = [p.year && `${p.year} at Yale`, p.fields?.length && `Interests: ${p.fields.join(", ")}`, p.looking_for?.length && `Looking for: ${p.looking_for.join(", ")}`,

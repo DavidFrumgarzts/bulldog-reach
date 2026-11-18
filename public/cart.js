@@ -50,7 +50,7 @@ function renderCart() {
   $("#listrows").innerHTML = items.map((it, rank) => {
     const d = daysUntil(it.opp.deadline);
     const total = it.detail?.checklist?.length || 0;
-    const done = stepsDone(it).length, reachN = reachSet(it).size, pplN = (it.detail?.people || []).length;
+    const done = (it.done || []).length;
     const urgent = d != null && d <= 14 && !["submitted", "interview", "offer", "dropped"].includes(it.status);
     const nextEv = (it.detail?.events || []).filter((e) => e.date && daysUntil(e.date) >= 0).sort((a, b) => a.date.localeCompare(b.date))[0];
     return `<div class="lrow ${it.status === "dropped" ? "dim" : ""}" onclick="openItem('${it.id}')">
@@ -58,7 +58,6 @@ function renderCart() {
       <div class="lmain">
         <div class="ltitle">${esc(it.opp.title)}</div>
         <div class="lorg">${esc(it.opp.org)} · ${esc(it.opp.type || "opportunity")}${it.opp.yale_tie ? ` · <span class="lyt">${esc(it.opp.yale_tie)}</span>` : ""}</div>
-        ${pplN ? `<div class="lnext">👤 ${reachN ? reachN + " of " + pplN + " people chosen" : pplN + " people to reach"}</div>` : ""}
         ${nextEv ? `<div class="lnext">${KIND_ICON[nextEv.kind] || "📍"} ${esc(nextEv.title)} · ${esc(fmtDate(nextEv.date))}</div>` : ""}
       </div>
       <div class="ldl ${urgent ? "urgent" : ""}">${d != null ? (d < 0 ? "Closed" : d === 0 ? "Due today" : `${d} days`) : "Rolling"}<small>${it.opp.deadline ? esc(fmtDate(it.opp.deadline)) : esc(it.opp.deadline_note || "no fixed deadline")}</small></div>
@@ -78,14 +77,10 @@ async function openItem(id) {
 }
 function paintItem(it) {
   const D = it.detail;
-  const done = new Set(stepsDone(it)), reach = reachSet(it);
+  const done = new Set(it.done || []);
   const gcal = (e) => {
     const start = e.date.replace(/-/g, ""); const end = new Date(e.date + "T12:00:00"); end.setDate(end.getDate() + 1);
-<<<<<<< Updated upstream
     return "https://calendar.google.com/calendar/render?" + new URLSearchParams({ action: "TEMPLATE", text: `${KIND_ICON[e.kind] || ""} ${e.title}`, dates: `${start}/${end.toISOString().slice(0, 10).replace(/-/g, "")}`, details: [e.time, e.url, e.verified ? "" : "Confirm this date on the official page.", "— Bulldog Reach"].filter(Boolean).join("\n") });
-=======
-    return "https://calendar.google.com/calendar/render?" + new URLSearchParams({ action: "TEMPLATE", text: `${KIND_ICON[e.kind] || ""} ${e.title}`, dates: `${start}/${end.toISOString().slice(0, 10).replace(/-/g, "")}`, details: [e.time, e.url, "— Bulldog Reach"].filter(Boolean).join("\n") });
->>>>>>> Stashed changes
   };
   const events = [
     ...(it.opp.deadline ? [{ title: `Apply: ${it.opp.title}`, kind: "deadline", date: it.opp.deadline, url: it.opp.url, verified: true }] : []),
@@ -99,30 +94,15 @@ function paintItem(it) {
       ${it.opp.url ? `<a class="glassbtn smallbtn" href="${esc(it.opp.url)}" target="_blank" rel="noopener">Official page ↗</a>` : ""}
       <button class="calbtn" onclick="openTailor('${it.id}')">✨ Tailor my resume</button>
     </div>
-<<<<<<< Updated upstream
     ${!D ? `<p class="loading"><i></i>Finding deadlines, info sessions and a checklist…</p>` : D.error ? `<p class="err">${esc(D.error)}</p>` : `
-=======
-    ${!D ? `<p class="loading"><i></i>Bulldog is finding the people, dates and a checklist…</p>` : D.error ? `<p class="err">${esc(D.error)}</p>` : `
->>>>>>> Stashed changes
     <p class="lede" style="font-size:16px;margin:18px 0 6px">${esc(D.summary)}</p>
     ${D.eligibility ? `<p class="why">Eligibility: ${esc(D.eligibility)}</p>` : ""}
-    <h3 class="dh">People to reach <small class="why">${(D.people || []).length ? reach.size + " chosen" : ""}</small></h3>
-    ${(D.people || []).length ? `<div class="ppl">${D.people.map((p, i) => `
-      <div class="pp ${reach.has(p.id) ? "on" : ""}">
-        <div class="pphead"><div class="ppav">${esc(initials(p.name))}</div>
-          <div class="ppwho"><b>${esc(p.name)}</b><small>${esc(p.role)}</small></div>
-          <button class="${reach.has(p.id) ? "whitebtn" : "glassbtn"} smallbtn" onclick="toggleReach('${it.id}','${esc(p.id)}')">${reach.has(p.id) ? "✓ Reaching out" : "+ Reach out"}</button></div>
-        ${p.yale_tie ? `<div class="yt"><span>${esc(p.yale_tie)}</span></div>` : ""}
-        <p class="why">${esc(p.why)}</p>
-        ${reach.has(p.id) ? `<div class="subj">Subject: ${esc(p.subject)} · Ask: ${esc(p.ask)}</div><div class="msg" id="pm${i}">${esc(p.message)}</div>
-        <div class="row3"><button class="whitebtn smallbtn" onclick="navigator.clipboard.writeText($('#pm${i}').textContent);this.textContent='Copied ✓'">Copy message</button>${p.url ? `<a class="glassbtn smallbtn" href="${esc(p.url)}" target="_blank" rel="noopener">Their page ↗</a>` : ""}</div>` : ""}
-      </div>`).join("")}</div>` : `<button class="glassbtn smallbtn" onclick="refreshItem('${it.id}')">Find people for this one</button>`}
     <h3 class="dh">Dates</h3>
     <div class="evlist">${events.length ? events.map((e) => `
       <div class="ev"><span class="evk">${KIND_ICON[e.kind] || "📍"}</span>
-        <div><b>${esc(e.title)}</b><small>${[e.date && esc(fmtDate(e.date)), e.time && esc(e.time)].filter(Boolean).join(" · ")}</small></div>
+        <div><b>${esc(e.title)}</b><small>${e.date ? esc(fmtDate(e.date)) : "Date TBA"}${e.time ? " · " + esc(e.time) : ""}${e.verified ? " · ✓ official source" : " · confirm date"}</small></div>
         ${e.date ? `<a class="calbtn smallbtn" href="${esc(gcal(e))}" target="_blank" rel="noopener">+ Calendar</a>` : e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noopener" class="smallbtn glassbtn">Details ↗</a>` : ""}
-      </div>`).join("") : `<p class="why">No dates posted.</p>`}</div>
+      </div>`).join("") : `<p class="why">No dated events found yet.</p>`}</div>
     <h3 class="dh">Checklist <small class="why">${done.size}/${(D.checklist || []).length}</small></h3>
     <div class="cl">${(D.checklist || []).map((c) => `<label class="task"><input type="checkbox" ${done.has(c.id) ? "checked" : ""} onchange="toggleStep('${it.id}','${esc(c.id)}',this.checked)"><span>${esc(c.text)}</span><em>${esc(c.kind)}</em></label>`).join("")}</div>
     <h3 class="dh">Do this week</h3>
@@ -143,19 +123,10 @@ async function setItem(id, patch) {
   CART.items = CART.items.map((i) => (i.id === id ? item : i));
   renderCart(); if (CART.open === id) paintItem(item);
 }
-// One saved array holds both: finished checklist steps, and chosen people as "reach:<person id>".
-const stepsDone = (it) => (it.done || []).filter((x) => !String(x).startsWith("reach:"));
-const reachSet = (it) => new Set((it.done || []).filter((x) => String(x).startsWith("reach:")).map((x) => x.slice(6)));
 function toggleStep(id, step, on) {
   const it = CART.items.find((i) => i.id === id);
   const done = new Set(it.done || []);
   on ? done.add(step) : done.delete(step);
-  setItem(id, { done: [...done] });
-}
-function toggleReach(id, pid) {
-  const it = CART.items.find((i) => i.id === id);
-  const done = new Set(it.done || []), k = "reach:" + pid;
-  done.has(k) ? done.delete(k) : done.add(k);
   setItem(id, { done: [...done] });
 }
 async function refreshItem(id) { await call(`/api/cart/${id}/refresh`, {}); CART.items = CART.items.map((i) => (i.id === id ? { ...i, detail: null } : i)); paintItem(CART.items.find((i) => i.id === id)); loadCart(); }
@@ -184,9 +155,10 @@ async function openCalendar() {
   const c = CART.cal;
   $("#calbody").innerHTML = `
     <p class="lede" style="font-size:16px">Subscribe once. Every deadline, info session and office hour for opportunities on your list shows up in your calendar automatically — including ones you add later.</p>
+    ${c.publicHost ? "" : `<p class="banner" style="margin:12px 0">You're running locally, so Google can't reach this feed yet. Subscribing works once Bulldog Reach is deployed. You can still download a one-time .ics below.</p>`}
     <div class="row3" style="margin:18px 0">
-      ${c.publicHost ? `<a class="cta" style="width:auto;height:56px;padding:0 24px;font-size:17px;border-radius:16px" href="${esc(c.google)}" target="_blank" rel="noopener">Add to Google Calendar</a>
-      <a class="glassbtn smallbtn" href="${esc(c.webcal)}">Apple / Outlook</a>` : ""}
+      <a class="cta" style="width:auto;height:56px;padding:0 24px;font-size:17px;border-radius:16px" href="${esc(c.google)}" target="_blank" rel="noopener">Add to Google Calendar</a>
+      <a class="glassbtn smallbtn" href="${esc(c.webcal)}">Apple / Outlook</a>
       <a class="glassbtn smallbtn" href="${esc(c.feed)}" download="bulldog-reach.ics">Download .ics</a>
     </div>
     <p class="why">Private feed URL (don't share it): <code style="user-select:all">${esc(c.feed)}</code></p>

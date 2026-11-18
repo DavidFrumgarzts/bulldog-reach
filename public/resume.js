@@ -18,7 +18,6 @@ function paintOnboarding() {
   if (has && !$("#about").value) $("#about").value = aboutFromResume(RS.resume.base);
 }
 function aboutFromResume(r) {
-  if (r.about) return r.about; // the short paragraph written when the resume was read
   const ed = r.education?.[0];
   const roles = (r.experience || []).slice(0, 3).map((e) => `${e.role} at ${e.org}`).join("; ");
   const skills = (r.skills || []).flatMap((s) => s.items).slice(0, 10).join(", ");
@@ -98,11 +97,7 @@ async function openTailor(cartId) {
   paintWorkspace();
 }
 async function generateSuggestions() {
-<<<<<<< Updated upstream
   $("#rwside").innerHTML = `<p class="loading"><i></i>Reading the opportunity and your resume… (~15s)</p>`;
-=======
-  $("#rwside").innerHTML = `<p class="loading"><i></i>Bulldog is reading the opportunity and your resume…</p>`;
->>>>>>> Stashed changes
   try {
     const { tailored } = await call("/api/tailor/" + RS.cartId, {});
     RS.tailored = tailored; RS.doc = structuredClone(tailored.resume);
@@ -122,22 +117,14 @@ function paintSide() {
   const side = $("#rwside");
   if (RS.mode === "base") {
     side.innerHTML = `<div class="k">Base resume</div>
-<<<<<<< Updated upstream
       <p class="why" style="font-size:14px">This is what we read from your files. <b style="color:#fff">Check every line</b> — click any text to edit it. Changes save automatically.</p>
-=======
-      <p class="why" style="font-size:14px">This is your resume. Click any text to edit it. Changes save automatically.</p>
->>>>>>> Stashed changes
       <p class="why" style="font-size:14px">To tailor it, open an opportunity on your list and press “✨ Tailor my resume”. Your base resume never changes from tailoring.</p>
       <button class="linkbtn" onclick="$('#rw').hidden=true;openWiz('resume')">Re-upload files</button>`;
     return;
   }
   const T = RS.tailored;
   if (!T?.suggestions?.length) {
-<<<<<<< Updated upstream
     side.innerHTML = `<div class="k">Tailoring</div><p class="why" style="font-size:14px">You’ll get suggested edits for this opportunity: wording, order, keywords, and where a number would help. <b style="color:#fff">Nothing changes until you accept it.</b></p>
-=======
-    side.innerHTML = `<div class="k">Tailoring</div><p class="why" style="font-size:14px">Bulldog suggests edits for this opportunity: wording, order, keywords, and where a number would help. <b style="color:#fff">Nothing changes until you accept it.</b></p>
->>>>>>> Stashed changes
       <button class="cta" style="width:auto;height:52px;padding:0 22px;font-size:16px;border-radius:14px" onclick="generateSuggestions()">Suggest edits →</button>`;
     return;
   }

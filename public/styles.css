@@ -276,14 +276,3 @@
   .meta{margin-top:28px;font-size:13px;color:rgba(255,255,255,.4)}
   @media(max-width:1100px){.wrap{padding:0 24px}.herogrid{grid-template-columns:1fr}.phone{display:none}h1{font-size:72px}.cta{width:100%}
     .formgrid,.pc{grid-template-columns:1fr}.steps,.week{grid-template-columns:1fr 1fr}.north .v{font-size:48px}}
-
-  /* demo badge hides when live; people inside a program */
-  .status[hidden]{display:none}
-  .ppl{display:flex;flex-direction:column;gap:10px}
-  .pp{padding:16px;border-radius:18px;background:var(--glass);border:1px solid var(--stroke);display:flex;flex-direction:column;gap:10px}
-  .pp.on{border-color:rgba(52,199,89,.5)}
-  .pphead{display:flex;align-items:center;gap:12px}
-  .ppav{width:40px;height:40px;flex:none;border-radius:50%;background:var(--amber);color:#1B0F08;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center}
-  .ppwho{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-  .ppwho small{color:var(--mute);font-size:13px}
-  .pp .why{margin:0}
