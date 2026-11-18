@@ -19,6 +19,8 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_KEY
         sync: false
+      - key: AUTH_EMAIL_CODE
+        value: "1"
       - key: ALLOWED_DOMAIN
         value: yale.edu
       - key: DAILY_PLAN_LIMIT
