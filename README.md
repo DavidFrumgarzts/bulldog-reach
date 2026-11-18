@@ -24,8 +24,6 @@ Built in about 2 hours at the **y/cs × SpaceXSI Grokathon**, Yale, November 17,
 
 A one-minute walkthrough: [docs/demo.mp4](docs/demo.mp4).
 
-App walkthrough (onboarding → swipe → game plan → deadlines): [docs/demo-walkthrough.mp4](docs/demo-walkthrough.mp4).
-
 ## Built with Grok CLI
 
 ![Grok CLI: implement the PRD](docs/screenshots/grok-cli-implement-prd.webp)
