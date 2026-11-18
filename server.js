@@ -522,7 +522,10 @@ http
         if (resumeText.length < 80 && linkedinText.length < 80) return send(res, 400, { error: "We couldn't read enough text from your files. Try a different PDF/DOCX." });
         await bump(user, "parse");
         const base = DEMO ? demoResume() : await claudePlain(RESUME_PARSE_SYSTEM, `RESUME TEXT:\n${resumeText || "(none)"}\n\nLINKEDIN EXPORT TEXT:\n${linkedinText || "(none)"}`);
-        const saved = await store.resumeSave(user.id, { base: normalizeResume(base), linkedin_url: clip(b.linkedin_url, 300), source_names: (b.source_names || []).slice(0, 4).map((s) => clip(s, 120)) });
+        const norm = normalizeResume(base), li = clip(b.linkedin_url, 300);
+        // The student gives a profile link, not an export: put the link on the resume's contact line.
+        if (li && Array.isArray(norm.contact?.links) && !norm.contact.links.some((l) => /linkedin\.com/i.test(l))) norm.contact.links.unshift(li);
+        const saved = await store.resumeSave(user.id, { base: norm, linkedin_url: li, source_names: (b.source_names || []).slice(0, 4).map((s) => clip(s, 120)) });
         return send(res, 200, { resume: saved });
       }
       if (url === "/api/resume" && req.method === "PUT") {

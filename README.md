@@ -22,7 +22,7 @@ Built in about 2 hours at the **y/cs × SpaceXSI Grokathon**, Yale, November 17,
 
 ## Beta features (v2)
 
-- **Onboarding:** upload your resume (PDF or Word) and, optionally, LinkedIn's "Save to PDF" export of your profile. Claude turns them into a structured resume you can edit.
+- **Onboarding:** a step-by-step flow asks for your resume (PDF or Word), your LinkedIn profile link, your goal, and a little about you. Claude turns the resume into a structured one you can edit. The LinkedIn link is stored and shown on your resume; the app does not read your LinkedIn profile.
 - **My list (the "cart"):** swipe right to save an opportunity. Claude then researches its deadlines, info sessions, and office hours, builds an application checklist and draft messages, and ranks your list by urgency.
 - **Calendar sync:** a private subscription feed. Subscribe once in Google, Apple, or Outlook Calendar, and every date for opportunities on your list appears automatically.
 - **Resume tailoring:** for each opportunity, Claude **suggests** edits (wording, order, keywords, where a number would help). Nothing changes until you accept a suggestion. Claude never invents numbers: it leaves `[X%]` placeholders for you to fill in, and flags any new wording that isn't in your resume. Export to **Word (.docx)** or **PDF**.

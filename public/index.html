@@ -19,7 +19,7 @@
   button{font:inherit;cursor:pointer}
 
   /* HERO */
-  .hero{position:relative;overflow:hidden;min-height:900px;background:radial-gradient(90% 120% at 55% -10%,#C27A35 0%,#5A3014 45%,#140B06 100%)}
+  .hero{position:relative;overflow:hidden;min-height:100vh;min-height:100svh;background:radial-gradient(90% 120% at 55% -10%,#C27A35 0%,#5A3014 45%,#140B06 100%)}
   .glow{position:absolute;border-radius:50%;filter:blur(140px);pointer-events:none}
   .g1{width:520px;height:520px;right:-60px;top:-120px;background:rgba(242,178,102,.35)}
   .g2{width:460px;height:460px;left:-160px;top:560px;background:rgba(138,75,30,.45)}
@@ -34,6 +34,7 @@
   .pillbtn{height:60px;padding:0 30px;border-radius:30px;font-weight:600;font-size:17px;display:inline-flex;align-items:center;text-decoration:none}
   .status{font-size:13px;font-weight:600;padding:8px 14px;border-radius:99px;display:flex;gap:8px;align-items:center;background:rgba(255,255,255,.1);color:var(--mute)}
   .status i{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+  .status[hidden]{display:none}
   .status.live{background:rgba(52,199,89,.14);color:#7EE2A0}.status.live i{background:var(--green)}
 
   .herogrid{position:relative;display:grid;grid-template-columns:1fr 440px;gap:40px;align-items:start;padding-top:96px;padding-bottom:80px}
@@ -177,6 +178,23 @@
   .badge:empty{display:none}
   .smallbtn{height:40px;padding:0 16px;border-radius:99px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;text-decoration:none;white-space:nowrap}
   .row3{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .wiz{position:fixed;inset:0;z-index:40;overflow:auto;padding:0;display:flex;flex-direction:column;background:radial-gradient(90% 80% at 50% -10%,#5A3014 0%,#1B0F08 50%,#140B06 100%)}
+  .wiz[hidden]{display:none}
+  .wizbar{display:flex;align-items:center;gap:20px;padding:22px 32px}
+  .wizprog{flex:1;height:4px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden}
+  .wizprog i{display:block;height:100%;width:0;background:#fff;border-radius:99px;transition:width .3s}
+  .wiznote{font-size:13px;font-weight:600;color:var(--mute)}
+  .wizbody{flex:1;display:flex;padding:24px 24px 90px}
+  .wizin{width:min(720px,100%);margin:auto}
+  .wstep[hidden]{display:none}
+  .wstep h2{margin-bottom:12px}
+  .wstep .why{font-size:17px;margin:0 0 26px}
+  .wstep .authbox,.wstep.authbox{margin-top:0}
+  .wstep .drop{padding:28px}
+  .wstep .linput{width:100%;font-size:18px;height:64px}
+  .wnav{display:flex;align-items:center;gap:18px;margin-top:26px}
+  .wnav .sp{flex:1}
+  .wnav .cta{width:auto;padding:0 30px;height:64px;font-size:20px;border-radius:18px}
   .onboard{margin-top:28px;padding:32px;border-radius:28px;background:linear-gradient(135deg,rgba(242,178,102,.14),rgba(255,255,255,.05));border:1px solid rgba(242,178,102,.3)}
   .onboard h3{font-size:30px;letter-spacing:-.02em;margin:0 0 8px}
   .onbgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -294,15 +312,15 @@
   <div class="wrap">
     <nav>
       <div class="brand"><span class="logo">B_</span><span class="seen">as seen at y/cs × SpaceXSI Grokathon</span></div>
-      <div class="navr"><span id="status" class="status"><i></i>connecting…</span><span id="usage" class="usage"></span><button class="glassbtn mebtn" onclick="document.getElementById('list').hidden ? toast('Swipe right on opportunities to add them to your list') : document.getElementById('list').scrollIntoView({behavior:'smooth'})">My list <b id="cartcount" class="badge"></b></button><button class="glassbtn mebtn" id="resumebtn" onclick="openResume()">Add resume</button><span id="me" class="me"></span><a href="#build" class="pillbtn whitebtn">Get started</a></div>
+      <div class="navr"><span id="status" class="status" hidden></span><span id="usage" class="usage"></span><button class="glassbtn mebtn" onclick="document.getElementById('list').hidden ? toast('Swipe right on opportunities to add them to your list') : document.getElementById('list').scrollIntoView({behavior:'smooth'})">My list <b id="cartcount" class="badge"></b></button><button class="glassbtn mebtn" id="resumebtn" onclick="openResume()">Add resume</button><span id="me" class="me"></span><a href="#build" class="pillbtn whitebtn">Get started</a></div>
     </nav>
     <div class="herogrid">
       <div>
         <h1>Get where<br/>you’re going.</h1>
         <p class="lede">Tell Bulldog Reach your goal. Claude maps the path, finds the Yalies who can unlock it, and writes the one message that moves you forward.</p>
-        <a class="cta" href="#build">
+        <button type="button" class="cta" onclick="openWiz()">
           <svg width="30" height="30" viewBox="0 0 28 28"><rect width="28" height="28" rx="7" fill="#34C759"/><path d="M14 7c-4.4 0-8 2.9-8 6.5 0 2 1.1 3.8 2.9 5l-.7 2.8 3.1-1.6c.9.2 1.8.3 2.7.3 4.4 0 8-2.9 8-6.5S18.4 7 14 7z" fill="#fff"/></svg>
-          Start my game plan</a>
+          Start my game plan</button>
         <div class="proof"><b style="background:#E8B67A"></b><b style="background:#9DB7E8"></b><b style="background:#E8A0A0"></b><span>Built for Yale — ranks by college, clubs &amp; classes</span></div>
       </div>
       <div class="phone"><div class="screen">
@@ -322,11 +340,15 @@
   </div>
 </section>
 
-<section class="builder" id="build">
-  <div class="wrap">
-    <div class="k">Step one</div>
-    <h2>What are you trying to make happen?</h2>
-    <div id="authbox" class="authbox" hidden>
+<section class="builder wiz" id="build" hidden>
+  <div class="wizbar">
+    <span class="logo">B_</span>
+    <div class="wizprog"><i id="wizprog"></i></div>
+    <span id="wiznote" class="wiznote"></span>
+    <button type="button" class="linkbtn" onclick="closeWiz()">Close</button>
+  </div>
+  <div class="wizbody"><div class="wizin">
+    <div id="authbox" class="authbox wstep" data-step="auth" hidden>
       <div class="k">Beta · Yale only</div>
       <h3>Sign in with your Yale email</h3>
       <p class="why" style="font-size:15px;margin:0 0 18px">We’ll email you a 6-digit code. No password. Your list, plans and resumes save to your account.</p>
@@ -338,41 +360,63 @@
       </div>
       <div id="autherr" class="err" style="margin-top:10px"></div>
     </div>
-    <form id="onboard" class="onboard" hidden onsubmit="submitOnboarding(event)">
-      <div class="k">Start here · 1 minute</div>
-      <h3>Your LinkedIn and your resume. That’s it.</h3>
-      <p class="why" style="font-size:15px;margin:0 0 18px">Claude reads them once, then tailors a resume for every opportunity you save. It only ever <b style="color:#fff">suggests</b> edits — nothing changes or gets sent without your OK.</p>
-      <div class="onbgrid">
+
+    <form id="onboard" onsubmit="event.preventDefault();wizNext()">
+      <div class="wstep" data-step="resume" hidden>
+        <div class="k">Step 1</div>
+        <h2>Start with your resume.</h2>
+        <p class="why">We read it once, then tailor it for every opportunity you save. We only ever <b style="color:#fff">suggest</b> edits — nothing changes or gets sent without your OK.</p>
         <label class="drop"><b>Resume</b><span>PDF or Word (.docx)</span><input id="rfile" type="file" accept=".pdf,.docx,.txt" /></label>
-        <label class="drop"><b>LinkedIn profile PDF</b><span>Optional · LinkedIn → your profile → More → “Save to PDF”</span><input id="lfile" type="file" accept=".pdf" /></label>
-        <input id="lurl" class="linput" type="url" placeholder="linkedin.com/in/your-name (optional)" />
+        <div class="wnav"><button type="button" class="linkbtn" onclick="wizBack()">Back</button><span id="onberr" class="err"></span><span class="sp"></span><button type="button" class="linkbtn" onclick="wizSkip()">Skip for now</button><button class="cta">Continue →</button></div>
       </div>
-      <div class="go" style="margin-top:16px"><span id="onberr" class="err"></span><button type="button" class="linkbtn" onclick="skipOnboarding()">Skip for now</button><button class="cta" id="onbbtn">Read my resume →</button></div>
+      <div class="wstep" data-step="linkedin" hidden>
+        <div class="k">Step 2</div>
+        <h2>What’s your LinkedIn?</h2>
+        <p class="why">Just the link to your profile. It goes on your resume and into your plan so people can look you up.</p>
+        <input id="lurl" class="linput" type="text" inputmode="url" autocomplete="url" placeholder="linkedin.com/in/your-name" />
+        <div class="wnav"><button type="button" class="linkbtn" onclick="wizBack()">Back</button><span id="lerr" class="err"></span><span class="sp"></span><button type="button" class="linkbtn" onclick="wizSkip()">Skip for now</button><button class="cta">Continue →</button></div>
+      </div>
     </form>
-    <form id="f" class="formgrid">
-      <div class="field goal">
-        <label>My goal</label>
-        <input id="goal" placeholder="Land a summer internship building AI agents" autocomplete="off" />
-        <div class="chips">
-          <button type="button" class="chip">Work on Grok at SpaceXSI this summer</button>
-          <button type="button" class="chip">Join a comp-bio research lab as a sophomore</button>
-          <button type="button" class="chip">Break into climate VC</button>
-          <button type="button" class="chip">Find a cofounder for my edtech startup</button>
+
+    <form id="f">
+      <div class="wstep" data-step="goal" hidden>
+        <div class="k">Step 3</div>
+        <h2>What are you trying to make happen?</h2>
+        <p class="why">One sentence is enough. The more specific, the better the plan.</p>
+        <div class="field goal">
+          <label>My goal</label>
+          <input id="goal" placeholder="Land a summer internship building AI agents" autocomplete="off" />
+          <div class="chips">
+            <button type="button" class="chip">Work on Grok at SpaceXSI this summer</button>
+            <button type="button" class="chip">Join a comp-bio research lab as a sophomore</button>
+            <button type="button" class="chip">Break into climate VC</button>
+            <button type="button" class="chip">Find a cofounder for my edtech startup</button>
+          </div>
         </div>
+        <div class="wnav"><button type="button" class="linkbtn" onclick="wizBack()">Back</button><span id="err" class="err"></span><span class="sp"></span><button class="cta">Continue →</button></div>
       </div>
-      <div class="field">
-        <label>People to consider · optional — paste LinkedIn profiles, separate with ---</label>
-        <textarea id="profiles" placeholder="Leave empty and Claude will propose who to find."></textarea>
+      <div class="wstep" data-step="about" hidden>
+        <div class="k">Step 4</div>
+        <h2>Tell us about you.</h2>
+        <p class="why">Class year, college, major, clubs, what you’ve built. If you added a resume, we fill this in for you.</p>
+        <div class="field">
+          <label>About me</label>
+          <textarea id="about" placeholder="’27 · Silliman · CS + Econ · y/cs · built …"></textarea>
+        </div>
+        <div class="wnav"><button type="button" class="linkbtn" onclick="wizBack()">Back</button><span class="sp"></span><button class="cta">Continue →</button></div>
       </div>
-      <div class="field">
-        <label>About me</label>
-        <textarea id="about" placeholder="’27 · Silliman · CS + Econ · y/cs · built …"></textarea>
+      <div class="wstep" data-step="people" hidden>
+        <div class="k">Step 5</div>
+        <h2>Anyone already in mind?</h2>
+        <p class="why">Optional. Paste LinkedIn profiles of people you’re considering, separated with ---. Leave it empty and we’ll propose who to find.</p>
+        <div class="field">
+          <label>People to consider</label>
+          <textarea id="profiles" placeholder="Paste profile text here, or leave empty."></textarea>
+        </div>
+        <div class="wnav"><button type="button" class="linkbtn" onclick="wizBack()">Back</button><span class="sp"></span><button type="button" class="linkbtn" id="skip">Skip to game plan</button><button class="cta" id="btn">Find my opportunities →</button></div>
       </div>
-      <div class="go"><span id="err" class="err"></span>
-        <button type="button" class="linkbtn" id="skip">Skip to game plan</button>
-        <button class="cta" id="btn">Find my opportunities →</button></div>
     </form>
-  </div>
+  </div></div>
 </section>
 
 <section id="deck" class="decksec" hidden>
@@ -449,8 +493,7 @@ const token = () => AUTH.session?.access_token;
 async function boot() {
   const cfg = await fetch("/api/config").then((r) => r.json());
   const el = $("#status");
-  el.innerHTML = `<i></i>${cfg.demo ? "demo mode" : "Claude live"}`;
-  if (!cfg.demo) el.classList.add("live");
+  if (cfg.demo) { el.hidden = false; el.innerHTML = "<i></i>demo mode"; }
   AUTH.on = cfg.auth; AUTH.emailCode = !!cfg.emailCode; AUTH.domain = cfg.domain; AUTH.limits = cfg.limits || {};
   if (!AUTH.on) return paintAuth();
   const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
@@ -459,9 +502,8 @@ async function boot() {
   // Email button lands on /auth/confirm?token_hash=…&type=email — verify it here and sign in, in ANY browser.
   const q = new URLSearchParams(location.search);
   if (location.pathname === "/auth/confirm" && q.get("token_hash")) {
-    $("#authbox").hidden = false; $("#f").hidden = true;
+    openWiz("auth");
     $("#authstep").innerHTML = `<p class="loading" style="padding:0"><i></i>Signing you in…</p>`;
-    $("#build").scrollIntoView();
     const { error } = await AUTH.sb.auth.verifyOtp({ token_hash: q.get("token_hash"), type: q.get("type") || "email" });
     history.replaceState(null, "", "/");
     if (error) showEmailStep(`That link expired or was already used (${error.message}). Enter your email to get a new one.`);
@@ -473,14 +515,48 @@ async function boot() {
 }
 window.addEventListener("DOMContentLoaded", boot);
 
+// ---------------- onboarding: one question per screen ----------------
+const WIZ = { cur: null, steps: ["resume", "linkedin", "goal", "about", "people"] };
+const needAuth = () => AUTH.on && !AUTH.session;
+const hasResume = () => typeof RS !== "undefined" && !!RS.resume?.base;
+function wizShow(step) {
+  if (needAuth()) step = "auth";
+  else if (!step || step === "auth") step = hasResume() ? "goal" : "resume";
+  WIZ.cur = step;
+  document.querySelectorAll("#build .wstep").forEach((el) => (el.hidden = el.dataset.step !== step));
+  const i = WIZ.steps.indexOf(step), el = $(`#build .wstep[data-step="${step}"]`);
+  $("#wizprog").style.width = `${((i + 1) / WIZ.steps.length) * 100}%`;
+  if (i >= 0) el.querySelector(".k").textContent = `Step ${i + 1} of ${WIZ.steps.length}`;
+  const first = el.querySelector("input:not([type=file]),textarea");
+  if (first) setTimeout(() => first.focus(), 60);
+}
+function openWiz(step) { $("#build").hidden = false; document.documentElement.style.overflow = "hidden"; wizShow(step); }
+function closeWiz() { $("#build").hidden = true; document.documentElement.style.overflow = ""; }
+function wizBack() { const i = WIZ.steps.indexOf(WIZ.cur); i > 0 ? wizShow(WIZ.steps[i - 1]) : closeWiz(); }
+function wizSkip() { if (WIZ.cur === "resume") $("#rfile").value = ""; if (WIZ.cur === "linkedin") $("#lurl").value = ""; wizNext(true); }
+function wizNext(skipped) {
+  if (WIZ.cur === "resume" && skipped !== true && !$("#rfile").files[0] && !hasResume()) return ($("#onberr").textContent = "Add your resume, or skip for now.");
+  if (WIZ.cur === "resume") $("#onberr").textContent = "";
+  if (WIZ.cur === "linkedin") {
+    let u = $("#lurl").value.trim();
+    if (u && !/linkedin\.com\/in\/[^\s/]+/i.test(u)) return ($("#lerr").textContent = "Use your profile link, like linkedin.com/in/your-name.");
+    if (u && !/^https?:\/\//i.test(u)) u = "https://" + u;
+    $("#lerr").textContent = ""; $("#lurl").value = u; localStorage.bb_linkedin = u;
+    parseResume(); // reads the chosen file in the background while you keep going
+  }
+  if (WIZ.cur === "goal" && !readGoal()) return;
+  wizShow(WIZ.steps[WIZ.steps.indexOf(WIZ.cur) + 1]);
+}
+// What we tell the model about the student: their own words plus their LinkedIn link.
+const aboutText = () => [$("#about").value.trim(), localStorage.bb_linkedin && "LinkedIn: " + localStorage.bb_linkedin].filter(Boolean).join("\n");
+
 function paintAuth() {
   const signedIn = !AUTH.on || !!AUTH.session;
-  $("#authbox").hidden = signedIn;
-  $("#f").hidden = !signedIn;
+  if (!$("#build").hidden) wizShow(WIZ.cur);
   const email = AUTH.session?.user?.email;
   $("#me").innerHTML = AUTH.on && email
     ? `<button class="glassbtn mebtn" onclick="openHistory()">My plans</button><span class="meemail">${esc(email)}</span><button class="linkbtn" style="font-size:14px" onclick="signOut()">Sign out</button>`
-    : AUTH.on ? `<a href="#build" class="glassbtn mebtn" style="text-decoration:none">Sign in</a>` : "";
+    : AUTH.on ? `<button class="glassbtn mebtn" onclick="openWiz()">Sign in</button>` : "";
   if (AUTH.on && email) loadHistory();
   if (signedIn) { loadCart(); loadResume(); }
 }
@@ -545,6 +621,9 @@ async function signOut() { await AUTH.sb.auth.signOut(); location.reload(); }
 
 document.querySelectorAll(".chip").forEach((c) => (c.onclick = () => ($("#goal").value = c.textContent)));
 $("#about").value = localStorage.bb_about || "";
+$("#lurl").value = localStorage.bb_linkedin || "";
+// An error under a field clears as soon as the student changes that step.
+for (const ev of ["input", "click"]) $("#build").addEventListener(ev, (e) => { if (e.target.closest(".field,.linput,.drop")) $("#err").textContent = $("#lerr").textContent = $("#onberr").textContent = ""; });
 
 // ---------------- state ----------------
 const S = { goal: "", deck: [], liked: [], seen: [], plan: null, outreach: {} };
@@ -553,7 +632,7 @@ async function call(path, { method = "POST", body } = {}) {
   if (token()) headers.Authorization = "Bearer " + token();
   const r = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : undefined });
   const d = await r.json().catch(() => ({}));
-  if (r.status === 401 && AUTH.on) { AUTH.session = null; paintAuth(); window.scrollTo({ top: $("#build").offsetTop }); }
+  if (r.status === 401 && AUTH.on) { AUTH.session = null; paintAuth(); openWiz(); }
   if (!r.ok) throw Object.assign(new Error(d.error || "Something broke"), { status: r.status });
   if (d._usage) paintUsage(d._usage);
   return d;
@@ -609,10 +688,12 @@ const readGoal = () => {
 // Step 1 → find opportunities (swipe deck)
 $("#f").onsubmit = async (e) => {
   e.preventDefault();
-  if (!readGoal()) return;
+  if (WIZ.cur !== "people") return wizNext();
+  if (!readGoal()) return wizShow("goal");
+  closeWiz();
   await loadDeck();
 };
-$("#skip").onclick = () => { if (readGoal()) buildPlan(); };
+$("#skip").onclick = () => { if (!readGoal()) return wizShow("goal"); closeWiz(); buildPlan(); };
 $("#more").onclick = () => loadDeck();
 $("#planbtn").onclick = () => buildPlan();
 
@@ -623,7 +704,7 @@ async function loadDeck() {
   renderLikes();
   window.scrollTo({ top: $("#deck").offsetTop, behavior: "smooth" });
   try {
-    const d = await api("/api/opportunities", { goal: S.goal, about: $("#about").value, seen: S.seen });
+    const d = await api("/api/opportunities", { goal: S.goal, about: aboutText(), seen: S.seen });
     const fresh = (d.opportunities || []).filter((o) => o && o.title && !S.seen.includes(o.title));
     fresh.forEach((o) => {
       S.seen.push(o.title);
@@ -718,7 +799,7 @@ async function buildPlan() {
   $("#btn").disabled = $("#planbtn").disabled = true;
   const stop = showProgress();
   try {
-    const d = await api("/api/plan", { goal, about: $("#about").value, profiles: $("#profiles").value, liked: S.liked });
+    const d = await api("/api/plan", { goal, about: aboutText(), profiles: $("#profiles").value, liked: S.liked });
     stop();
     d._liked = S.liked;
     S.outreach = {};

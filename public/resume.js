@@ -14,7 +14,6 @@ async function loadResume() {
 }
 function paintOnboarding() {
   const has = !!RS.resume?.base;
-  $("#onboard").hidden = has || localStorage.bb_skip_onboard === "1";
   $("#resumebtn").textContent = has ? "My resume" : "Add resume";
   if (has && !$("#about").value) $("#about").value = aboutFromResume(RS.resume.base);
 }
@@ -24,7 +23,6 @@ function aboutFromResume(r) {
   const skills = (r.skills || []).flatMap((s) => s.items).slice(0, 10).join(", ");
   return [ed && `${ed.degree || ""} ${ed.school || ""} ${ed.dates || ""}`.trim(), roles, skills && "Skills: " + skills].filter(Boolean).join(" · ");
 }
-function skipOnboarding() { localStorage.bb_skip_onboard = "1"; paintOnboarding(); }
 
 async function extractText(file) {
   if (!file) return "";
@@ -59,30 +57,30 @@ async function extractText(file) {
   return new TextDecoder().decode(buf).trim();
 }
 
-async function submitOnboarding(e) {
-  e.preventDefault();
-  const rf = $("#rfile").files[0], lf = $("#lfile").files[0];
-  if (!rf && !lf) return ($("#onberr").textContent = "Add your resume (PDF or Word).");
-  $("#onberr").textContent = "";
-  $("#onbbtn").disabled = true; $("#onbbtn").textContent = "Reading your files…";
+// Reads the resume chosen during onboarding. Runs in the background so the student can keep answering questions.
+async function parseResume() {
+  const rf = $("#rfile").files[0];
+  const key = rf && rf.name + ":" + rf.size;
+  if (!rf || RS.parsing || RS.parsedKey === key) return;
+  RS.parsing = true;
+  $("#wiznote").textContent = "Reading your resume…";
   try {
-    const [resume_text, linkedin_text] = await Promise.all([extractText(rf), extractText(lf)]);
-    $("#onbbtn").textContent = "Claude is structuring your resume…";
-    const { resume } = await call("/api/resume/parse", { body: { resume_text, linkedin_text, linkedin_url: $("#lurl").value.trim(), source_names: [rf?.name, lf?.name].filter(Boolean) } });
-    RS.resume = resume;
+    const resume_text = await extractText(rf);
+    const { resume } = await call("/api/resume/parse", { body: { resume_text, linkedin_url: localStorage.bb_linkedin || "", source_names: [rf.name] } });
+    RS.resume = resume; RS.parsedKey = key;
     paintOnboarding();
-    toast("Resume ready — check it for accuracy");
-    openResume();
+    toast("Resume ready — open My resume to check it");
   } catch (err) {
-    $("#onberr").textContent = err.message;
+    toast("Couldn’t read your resume: " + err.message);
   } finally {
-    $("#onbbtn").disabled = false; $("#onbbtn").textContent = "Read my resume →";
+    RS.parsing = false;
+    $("#wiznote").textContent = "";
   }
 }
 
 // ---------------- workspace (editor + suggestions) ----------------
 function openResume() {
-  if (!RS.resume?.base) { $("#onboard").hidden = false; localStorage.removeItem("bb_skip_onboard"); $("#onboard").scrollIntoView({ behavior: "smooth" }); return; }
+  if (!RS.resume?.base) return openWiz("resume");
   RS.mode = "base"; RS.cartId = null; RS.tailored = null;
   RS.doc = structuredClone(RS.resume.base);
   $("#rw").hidden = false;
@@ -121,7 +119,7 @@ function paintSide() {
     side.innerHTML = `<div class="k">Base resume</div>
       <p class="why" style="font-size:14px">This is what Claude read from your files. <b style="color:#fff">Check every line</b> — click any text to edit it. Changes save automatically.</p>
       <p class="why" style="font-size:14px">To tailor it, open an opportunity on your list and press “✨ Tailor my resume”. Your base resume never changes from tailoring.</p>
-      <button class="linkbtn" onclick="$('#rw').hidden=true;$('#onboard').hidden=false;localStorage.removeItem('bb_skip_onboard');$('#onboard').scrollIntoView()">Re-upload files</button>`;
+      <button class="linkbtn" onclick="$('#rw').hidden=true;openWiz('resume')">Re-upload files</button>`;
     return;
   }
   const T = RS.tailored;
