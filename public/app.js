@@ -33,7 +33,7 @@ function showOnboarding(step) {
   document.querySelectorAll(".ostep .k").forEach((k) => { const st = k.closest(".ostep").dataset.step; const n = vs.indexOf(st); if (st !== "email" && st !== "goal") k.textContent = `Step ${n + 1} of ${vs.length}`; });
   if (step === "linkedin" && APP.profile?.linkedin_url) $("#o_lurl").value ||= APP.profile.linkedin_url;
   if (step === "about") prefillChips();
-  if (step === "goal") { paintSuggestions(); $("#o_goal").value ||= APP.profile?.summer_goal || ""; setTimeout(() => $("#o_goal").focus(), 50); }
+  if (step === "goal") { paintSuggestions(); $("#o_goal").value ||= APP.profile?.summer_goal || ""; $("#o_people").value ||= APP.profile?.people || ""; setTimeout(() => $("#o_goal").focus(), 50); }
   window.scrollTo(0, 0);
 }
 function go(delta) {
@@ -44,22 +44,31 @@ function go(delta) {
 }
 
 
-async function parseAndContinue() {
-  const rf = $("#o_rfile").files[0], lf = $("#o_lfile").files[0];
-  if (!rf && !lf) return afterResume();
-  $("#o_rerr").textContent = "";
-  const btn = $("#o_rbtn");
-  btn.disabled = true; btn.textContent = "Reading your files…";
-  try {
-    const [resume_text, linkedin_text] = await Promise.all([extractText(rf), extractText(lf)]);
-    btn.textContent = "Claude is reading your resume…";
-    const { resume } = await call("/api/resume/parse", { body: { resume_text, linkedin_text, linkedin_url: $("#o_lurl").value.trim(), source_names: [rf?.name, lf?.name].filter(Boolean) } });
-    RS.resume = resume; paintOnboarding();
-    toast(`Read your resume — ${resume.base.experience.length} experiences, ${resume.base.education.length} schools`);
-    afterResume();
-  } catch (e) { $("#o_rerr").textContent = e.message; }
-  finally { btn.disabled = false; btn.textContent = "Continue →"; }
+// Resume is read in the background as soon as it's chosen, so the student keeps answering questions.
+async function parseInBackground() {
+  const rf = $("#o_rfile").files[0];
+  const key = rf && rf.name + ":" + rf.size;
+  if (!rf || RS.parsing || RS.parsedKey === key) return RS.parsing;
+  $("#o_rerr").textContent = ""; $("#o_rnote").textContent = "Reading your resume in the background…";
+  RS.parsing = (async () => {
+    try {
+      const resume_text = await extractText(rf);
+      const { resume } = await call("/api/resume/parse", { body: { resume_text, linkedin_url: $("#o_lurl").value.trim(), source_names: [rf.name] } });
+      RS.resume = resume; RS.parsedKey = key; paintOnboarding();
+      $("#o_rnote").textContent = `✓ Read: ${resume.base.experience.length} experiences, ${resume.base.education.length} schools`;
+    } catch (e) { $("#o_rnote").textContent = ""; $("#o_rerr").textContent = "Couldn’t read your resume: " + e.message; }
+    finally { RS.parsing = null; }
+  })();
+  return RS.parsing;
 }
+async function parseAndContinue() {
+  if (!$("#o_rfile").files[0]) return afterResume();
+  const p = parseInBackground();
+  if (APP.returnToApp) { $("#o_rbtn").disabled = true; await p; $("#o_rbtn").disabled = false; } // re-upload from the app: wait, then open it
+  if (!$("#o_rerr").textContent) afterResume();
+}
+// resume.js (Alwis's version) asks for the onboarding wizard by this name.
+function openWiz(step) { $("#rw").hidden = true; APP.returnToApp = true; showOnboarding(step === "resume" ? "resume" : step); }
 function afterResume() {
   if (APP.returnToApp) { APP.returnToApp = false; showShell(); if (RS.resume?.base) openResume(); return; }
   go(1);
@@ -111,7 +120,7 @@ async function finishOnboarding() {
   if (!goal) return $("#o_goal").focus();
   const a = Object.keys(APP.answers).length ? APP.answers : APP.profile || {};
   try {
-    const { profile } = await call("/api/profile", { method: "PUT", body: { ...a, linkedin_url: $("#o_lurl").value.trim() || APP.profile?.linkedin_url || "", summer_goal: goal, onboarded: true } });
+    const { profile } = await call("/api/profile", { method: "PUT", body: { ...a, linkedin_url: $("#o_lurl").value.trim() || APP.profile?.linkedin_url || "", people: $("#o_people").value.trim() || APP.profile?.people || "", summer_goal: goal, onboarded: true } });
     APP.profile = profile;
   } catch (e) { return toast(e.message); }
   setAbout();
@@ -127,6 +136,7 @@ function setAbout() {
   const bits = [p.year && `${p.year} at Yale`, p.fields?.length && `Interests: ${p.fields.join(", ")}`, p.looking_for?.length && `Looking for: ${p.looking_for.join(", ")}`,
     p.locations?.length && `Locations: ${p.locations.join(", ")}`, p.summer_goal && `Summer goal: ${p.summer_goal}`, RS.resume?.base && aboutFromResume(RS.resume.base)];
   $("#about").value = bits.filter(Boolean).join(" · ");
+  if (p.people && !$("#profiles").value) $("#profiles").value = p.people;
 }
 // resume.js sets #about only when empty; keep ours in sync whenever the resume loads.
 const _paintOnb = paintOnboarding;

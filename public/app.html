@@ -35,9 +35,8 @@
   <section class="ostep" data-step="linkedin" hidden>
     <div class="k">Step 2 of 5</div>
     <h1 class="oh">Connect your LinkedIn.</h1>
-    <p class="op">Paste your profile link, and (optional, but much better) upload LinkedIn’s PDF of your profile: <b>LinkedIn → your profile → Resources / More → Save to PDF</b>.</p>
+    <p class="op">Paste your profile link. We add it to your resume’s contact line — the app doesn’t read your LinkedIn profile.</p>
     <input id="o_lurl" class="oinput" type="url" placeholder="linkedin.com/in/your-name" />
-    <label class="drop odrop"><b>LinkedIn profile PDF</b><span id="o_lname">Optional · drop or choose a file</span><input id="o_lfile" type="file" accept=".pdf" onchange="$('#o_lname').textContent=this.files[0]?.name||''" /></label>
     <div class="onav"><button class="linkbtn" onclick="go(-1)">Back</button><span></span><button class="linkbtn" onclick="go(1)">Skip</button><button class="cta ocont" onclick="go(1)">Continue →</button></div>
   </section>
 
@@ -46,7 +45,8 @@
     <div class="k">Step 3 of 5</div>
     <h1 class="oh">Upload your resume.</h1>
     <p class="op">Claude reads it once and tailors a version for every opportunity you save — only as suggestions you approve.</p>
-    <label class="drop odrop big"><b>📄 Your resume</b><span id="o_rname">PDF or Word (.docx)</span><input id="o_rfile" type="file" accept=".pdf,.docx,.txt" onchange="$('#o_rname').textContent=this.files[0]?.name||''" /></label>
+    <label class="drop odrop big"><b>📄 Your resume</b><span id="o_rname">PDF or Word (.docx)</span><input id="o_rfile" type="file" accept=".pdf,.docx,.txt" onchange="$('#o_rname').textContent=this.files[0]?.name||'';parseInBackground()" /></label>
+    <div id="o_rnote" class="why"></div>
     <div id="o_rerr" class="err"></div>
     <div class="onav"><button class="linkbtn" onclick="go(-1)">Back</button><span></span><button class="linkbtn" onclick="go(1)">Skip for now</button><button class="cta ocont" id="o_rbtn" onclick="parseAndContinue()">Continue →</button></div>
   </section>
@@ -77,6 +77,8 @@
     <h1 class="oh">What do you want to achieve this summer?</h1>
     <textarea id="o_goal" class="ogoal" rows="3" placeholder="I want to land an AI internship this summer…"></textarea>
     <div class="chips2 sugg" id="o_sugg"></div>
+    <div class="oq" style="margin-top:22px"><div class="ol">Anyone specific in mind? <small>optional — names, LinkedIn links, or pasted profiles</small></div>
+      <textarea id="o_people" class="oinput" style="height:96px;padding:16px 20px;font-size:15px" placeholder="e.g. Prof. Arman Cohan; a Yale alum at xAI; linkedin.com/in/…"></textarea></div>
     <div class="onav"><button class="linkbtn" onclick="go(-1)">Back</button><span></span><button class="cta ocont" onclick="finishOnboarding()">Let’s go →</button></div>
   </section>
 </div>
