@@ -20,6 +20,10 @@ Built in about 2 hours at the **y/cs × SpaceXSI Grokathon**, Yale, November 17,
 ![Swipe deck](docs/swipe.jpg)
 ![People to reach (demo data)](docs/people.jpg)
 
+## Demo video
+
+A one-minute walkthrough: [docs/demo.mp4](docs/demo.mp4).
+
 ## Beta features (v2)
 
 - **Onboarding:** a step-by-step flow asks for your resume (PDF or Word), your LinkedIn profile link, your goal, and a little about you. Claude turns the resume into a structured one you can edit. The LinkedIn link is stored and shown on your resume; the app does not read your LinkedIn profile.
