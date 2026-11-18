@@ -1,0 +1,114 @@
+/* App shell: onboarding + ChatGPT-style chat. Builds on styles.css. */
+.appbody{background:#0E0806;min-height:100vh}
+
+/* ---------- onboarding ---------- */
+.onb{min-height:100vh;display:flex;flex-direction:column;background:radial-gradient(80% 70% at 70% 0%,#5A3014 0%,#140B06 60%,#0E0806 100%)}
+.onb[hidden],.shell[hidden]{display:none}
+.onbtop{display:flex;justify-content:space-between;align-items:center;padding:28px 40px}
+.dots{display:flex;gap:8px}
+.dots i{width:28px;height:4px;border-radius:4px;background:rgba(255,255,255,.18);transition:.3s}
+.dots i.on{background:#fff}
+.ostep{width:min(720px,100% - 48px);margin:6vh auto 60px;animation:rise .4s ease}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.oh{font-size:56px;line-height:1;letter-spacing:-.04em;margin:8px 0 14px}
+.op{font-size:18px;color:rgba(255,255,255,.72);margin:0 0 26px;line-height:1.45}
+.op b{color:#fff}
+.authbox.bare{margin:0;padding:0;background:none;border:0;max-width:none}
+.oinput{width:100%;height:64px;padding:0 22px;border-radius:18px;background:rgba(0,0,0,.28);border:1px solid var(--stroke);font-size:18px;margin-bottom:14px}
+.odrop{margin-bottom:10px}
+.odrop.big{padding:36px;align-items:center;text-align:center}
+.odrop.big b{font-size:20px}
+.onav{display:flex;align-items:center;gap:16px;margin-top:26px}
+.onav span{flex:1}
+.ocont{width:auto;height:64px;padding:0 30px;font-size:19px;border-radius:18px}
+.oq{margin-bottom:24px}
+.ol{font-size:17px;font-weight:600;margin-bottom:12px}
+.ol small{font-weight:500;color:var(--mute);margin-left:6px}
+.chips2{display:flex;flex-wrap:wrap;gap:10px}
+.chips2 button{padding:11px 18px;border-radius:99px;font:500 15px Inter;color:#fff;background:rgba(255,255,255,.07);border:1px solid var(--stroke);transition:.15s}
+.chips2 button:hover{background:rgba(255,255,255,.14)}
+.chips2 button.on{background:#fff;color:#111;border-color:#fff}
+.ogoal{width:100%;padding:22px;border-radius:22px;background:rgba(0,0,0,.28);border:1px solid var(--stroke);font:600 24px/1.35 Inter;letter-spacing:-.01em;resize:none}
+.sugg{margin-top:14px}
+.sugg button{font-size:14px}
+
+/* ---------- shell ---------- */
+.shell{display:block}
+.side{position:fixed;inset:0 auto 0 0;width:272px;background:#0A0604;border-right:1px solid var(--stroke);display:flex;flex-direction:column;padding:18px 14px;z-index:40;transition:transform .25s}
+.sidetop{display:flex;align-items:center;gap:10px;padding:4px 8px 16px}
+.sidetop .logo{font-size:26px}
+.sidebrand{font-weight:600;font-size:15px;color:rgba(255,255,255,.8)}
+.newchat{display:flex;align-items:center;gap:8px;width:100%;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.08);border:1px solid var(--stroke);color:#fff;font:600 15px Inter;cursor:pointer}
+.newchat:hover{background:rgba(255,255,255,.14)}
+.sidenav{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:2px;margin:14px 0 6px;padding-top:0}
+.sidenav button{display:flex;align-items:center;gap:8px;text-align:left;padding:10px 12px;border-radius:12px;background:none;border:0;color:rgba(255,255,255,.85);font:500 14.5px Inter;cursor:pointer}
+.sidenav button:hover{background:rgba(255,255,255,.07)}
+.sidelabel{font-size:12px;font-weight:600;color:rgba(255,255,255,.4);padding:14px 12px 6px;text-transform:uppercase;letter-spacing:.08em}
+.side-hist{flex:1;overflow:auto;gap:2px}
+.side-hist .hrow{padding:9px 12px;border-radius:12px;background:none;border:0;gap:1px}
+.side-hist .hrow:hover,.side-hist .hrow.on{background:rgba(255,255,255,.08)}
+.side-hist .hrow b{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.side-hist .hrow span{display:none}
+.side-hist .hrow small{font-size:11px}
+.sidefoot{border-top:1px solid var(--stroke);padding:12px 8px 0;display:flex;flex-direction:column;gap:8px}
+.side-me{flex-wrap:wrap;gap:6px}
+.side-me .mebtn{display:none}
+.side-me .meemail{max-width:100%;font-size:13px}
+.sidetoggle{display:none;position:fixed;top:14px;left:14px;z-index:45;width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.1);border:1px solid var(--stroke);color:#fff;font-size:18px}
+
+.main{margin-left:272px;min-height:100vh;padding-bottom:150px}
+.thread{width:min(980px,100% - 48px);margin:0 auto;padding:40px 0 20px;display:flex;flex-direction:column;gap:22px}
+.msg-u{align-self:flex-end;max-width:70%;padding:14px 20px;border-radius:24px 24px 6px 24px;background:#2A1D14;border:1px solid rgba(242,178,102,.25);font-size:16.5px;line-height:1.45;white-space:pre-wrap}
+.msg-a{display:flex;gap:14px;align-items:flex-start}
+.msg-a .av{flex:none;width:34px;height:34px;font-size:13px;background:#fff;color:#111;letter-spacing:-.04em}
+.msg-a .body{flex:1;min-width:0;font-size:16px;line-height:1.55}
+.msg-a .body > p{margin:4px 0 10px}
+.chips-inline{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chips-inline button{padding:9px 14px;border-radius:99px;font:500 14px Inter;color:#fff;background:rgba(255,255,255,.07);border:1px solid var(--stroke);cursor:pointer}
+.chips-inline button:hover{background:rgba(255,255,255,.14)}
+
+.empty-hero{text-align:center;margin:12vh auto 0;max-width:720px}
+.empty-hero h1{font-size:46px;letter-spacing:-.035em;line-height:1.05;margin:0 0 12px}
+.empty-hero p{color:var(--mute);font-size:17px;margin:0 0 26px}
+.starter{display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:left}
+.starter button{padding:16px 18px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid var(--stroke);color:#fff;font:500 15px Inter;cursor:pointer;line-height:1.35}
+.starter button small{display:block;color:var(--mute);font-size:13px;margin-top:4px}
+.starter button:hover{background:rgba(255,255,255,.1)}
+
+.composer{position:fixed;left:272px;right:0;bottom:34px;width:min(860px,100% - 320px);margin:0 auto;display:flex;align-items:flex-end;gap:10px;padding:10px 10px 10px 22px;border-radius:28px;background:#1E140D;border:1px solid rgba(255,255,255,.16);box-shadow:0 20px 60px rgba(0,0,0,.5);z-index:30}
+.composer textarea{flex:1;resize:none;max-height:180px;padding:12px 0;font-size:16.5px;line-height:1.45;background:none}
+.composer .send{flex:none;width:44px;height:44px;border-radius:50%;border:0;background:#fff;color:#111;font-size:20px;font-weight:700;cursor:pointer}
+.composer .send:disabled{opacity:.4}
+.composer-note{position:fixed;left:272px;right:0;bottom:10px;text-align:center;font-size:12px;color:rgba(255,255,255,.35)}
+
+/* in-chat versions of deck + plan */
+.decksec.inchat{background:none;padding:0}
+.inchat .deckgrid{grid-template-columns:1fr 380px;gap:32px;padding:24px;border-radius:28px;background:linear-gradient(135deg,rgba(242,178,102,.10),rgba(255,255,255,.03));border:1px solid var(--stroke)}
+.inchat .deckh{font-size:30px;letter-spacing:-.025em;margin:0}
+.inchat .stack{width:360px;height:480px}
+.inchat .oc h3{font-size:28px}
+.inchat .deckcta .cta{height:56px;font-size:18px}
+#out .wrap{padding:0;max-width:none}
+#out .rtop{padding-top:0}
+#out .north{margin:20px 0 26px}
+#out .north .v{font-size:40px}
+#out .steps{grid-template-columns:repeat(2,1fr)}
+#out .sh{margin:34px 0 14px}
+#out .sh h2{font-size:28px}
+#out .pc{grid-template-columns:280px 1fr;gap:22px}
+#out .pc .draft{grid-column:1/-1}
+#out .week{grid-template-columns:1fr}
+#out .prog{padding:10px 0}
+.listsec.inmodal{background:none;padding:0;border:0}
+.inmodal .lrow{grid-template-columns:28px 1fr 110px 120px}
+.inmodal .lstat{display:none}
+
+@media(max-width:900px){
+  .side{transform:translateX(-100%)}.side.open{transform:none}
+  .sidetoggle{display:block}
+  .main{margin-left:0}
+  .composer,.composer-note{left:0;width:calc(100% - 24px)}
+  .inchat .deckgrid{grid-template-columns:1fr}
+  .starter{grid-template-columns:1fr}
+  .oh{font-size:40px}
+}

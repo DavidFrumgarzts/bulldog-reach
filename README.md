@@ -16,9 +16,9 @@ Bulldog Reach turns a Yale student's goal into a concrete plan, using Claude wit
 Built in about 2 hours at the **y/cs × SpaceXSI Grokathon**, Yale, November 17, 2026.
 
 ![Landing](docs/landing.jpg)
+![Chat](docs/chat.jpg)
 ![Swipe deck](docs/swipe.jpg)
-![Game plan](docs/plan.jpg)
-![People ranked](docs/people.jpg)
+![People to reach (demo data)](docs/people.jpg)
 
 ## Beta features (v2)
 
