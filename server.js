@@ -28,6 +28,15 @@ const today = () => new Date().toISOString().slice(0, 10);
 const VOICE = `Voice: you are Bulldog. Write plainly and decisively. No disclaimers, caveats or hedging ("may", "might", "possibly", "unconfirmed", "verify", "double-check", "check the site", "TBA"). Never mention AI, a model or any vendor. This is about wording only: every name, date, URL and quote must come from what you found. Leave a field empty or null rather than fill it with a guess.`;
 const cleanName = (s) => String(s || "").replace(/\s*\([^)]*\)/g, "").replace(/\s+[-–—]\s+find .*$/i, "").trim();
 
+// A person to reach is a named individual with links we can stand behind.
+const ROLE_WORDS = /\b(office|team|department|committee|admissions|staff|adviser|advisor|coordinator|recruiter|alumni|alum|alumnus|students?|manager|director|officer|representative|contact|program)\b/i;
+const isPerson = (name) => { const n = cleanName(name); return /\S+\s+\S+/.test(n) && !ROLE_WORDS.test(n); };
+const personLinks = (p) => ({
+  url: /^https?:\/\//.test(p.url || "") ? clip(p.url, 500) : "",
+  linkedin_url: /^https?:\/\/([a-z]+\.)?linkedin\.com\/in\/[^\s/?#]+/i.test(p.linkedin_url || "") ? clip(p.linkedin_url, 300) : "",
+  photo_url: /^https:\/\/\S+$/.test(p.photo_url || "") ? clip(p.photo_url, 500) : "",
+});
+
 const PLAN_SYSTEM = `You are Bulldog Reach, an outreach strategist for Yale students.
 A student gives you a GOAL, a short ABOUT ME, optionally pasted PROFILES (LinkedIn text), and optionally OPPORTUNITIES THEY LIKED (swiped right).
 Your job: turn the goal into a concrete game plan and outreach that actually advances the goal — not generic networking.
@@ -36,8 +45,9 @@ Rules:
 - Work backwards from the goal: what outcome is needed, who can unlock it, what ask fits each person.
 - If the student liked specific opportunities, aim the plan and the people at THOSE (people who can refer/advise for them).
 - Prioritize Yale ties (same residential college, clubs, major, teams, professors, Yale alumni) — warm beats cold.
-- If profiles are pasted, rank THOSE people. If none, search and name 4-6 real, specific people tied to the liked opportunities or the goal: program directors and coordinators, faculty leads, recruiters, Yale alumni who did it, current students in it. Use each person's real full name and title from a page you found. Only when no real person can be found for a slot, use a short role title.
-- name: the person's name only, or a role title of at most 6 words. No parentheses, instructions or URLs in name.
+- If profiles are pasted, rank THOSE people. If none, search and name 4-6 real, specific people tied to the liked opportunities or the goal: program directors and coordinators, faculty leads, recruiters, Yale alumni who did it, current students in it. Use each person's real full name and title from a page you found. Every person must be a specific, named individual: never a role, an office or a team. Return fewer people rather than a placeholder.
+- name: the person's full name only. No parentheses, instructions or URLs.
+- url: the page where you found them. linkedin_url: their own LinkedIn profile (linkedin.com/in/...) when that exact URL appeared in your results, else "". photo_url: the direct URL of their headshot image when one appeared in your results, else "".
 - hook: one recent, specific, real thing about the person (a post, talk, paper, announcement, or news from their program). Never invent quotes. If you found none, set hook and hook_source to empty strings.
 - Messages: under 90 words, one specific ask, reference the hook and the Yale tie, no flattery filler, no "I hope this finds you well".
 - reply_likelihood is 0-100, honest. Explain it in one line.
@@ -48,7 +58,7 @@ Return ONLY JSON with this exact shape:
   "north_star": string,               // the concrete outcome, ONE punchy sentence, max 14 words, ends with a deadline
   "game_plan": [ { "step": number, "title": string, "who": string, "ask": string, "why": string } ],  // exactly 4 steps; title max 4 words; who/ask max 12 words each
   "people": [ {
-     "name": string, "headline": string, "step": number,
+     "name": string, "headline": string, "step": number, "url": string, "linkedin_url": string, "photo_url": string,
      "yale_ties": [string], "fit_score": number, "reply_likelihood": number, "likelihood_reason": string,
      "hook": string, "hook_source": string, "ask": string, "subject": string, "message": string,
      "follow_up": string,           // what to send if no reply
@@ -75,7 +85,7 @@ Return ONLY JSON:
 
 const DETAIL_SYSTEM = `You help a Yale student apply to ONE specific opportunity. Research it (official page, Yale OCS, employer events, public posts) and return what they need to act.
 Rules:
-- people: 3-5 real people the student should contact about THIS opportunity, found by search: the program director or coordinator, the faculty lead, a recruiter, Yale alumni or current students who did it. Real full names and titles from pages you found, with that page's url. name is the person's name only. For each: why they matter, one specific ask, and a message under 90 words. Return fewer if fewer real people can be found; never a placeholder.
+- people: 3-5 real people the student should contact about THIS opportunity, found by search: the program director or coordinator, the faculty lead, a recruiter, Yale alumni or current students who did it. Real full names and titles from pages you found, with that page's url. name is the person's full name only: never a role, an office or a team. linkedin_url is their own LinkedIn profile (linkedin.com/in/...) when that exact URL appeared in your results, else "". photo_url is the direct URL of their headshot image when one appeared in your results, else "". For each: why they matter, one specific ask, and a message under 90 words. Return fewer if fewer real people can be found; never a placeholder.
 - events: real upcoming dates only (after today): application deadline(s), info sessions, office hours, employer/Yale OCS events, networking events, recruiter coffee chats. Only include an event when you found its date (YYYY-MM-DD); set verified=true only if you saw the date on an official/primary source and include its url.
 - checklist: 5-9 concrete, ordered steps to submit a strong application (materials, essays, recommenders, outreach, prep). Short imperative text.
 - next_actions: the 3 most important things to do THIS WEEK.
@@ -83,7 +93,7 @@ Rules:
 - keywords: 8-15 skills/terms the application and resume should reflect.
 Return ONLY JSON:
 { "summary": string, "eligibility": string,
-  "people": [ { "name": string, "role": string, "yale_tie": string, "why": string, "url": string, "ask": string, "subject": string, "message": string } ],
+  "people": [ { "name": string, "role": string, "yale_tie": string, "why": string, "url": string, "linkedin_url": string, "photo_url": string, "ask": string, "subject": string, "message": string } ],
   "events": [ { "title": string, "kind": "deadline"|"info_session"|"office_hours"|"event"|"coffee_chat", "date": string|null, "time": string, "url": string, "verified": boolean } ],
   "checklist": [ { "id": string, "text": string, "kind": "application"|"outreach"|"prep" } ],
   "next_actions": [string],
@@ -355,7 +365,7 @@ async function enrich(user, item) {
       { name: "Maya Chen", role: "Program coordinator (example)", yale_tie: "Yale ’24 · Silliman", why: "Runs intake and answers applicant questions.", url: "", ask: "A 15-minute call about what makes an application stand out", subject: "Quick question before I apply", message: "Hi Maya — I’m a Yale sophomore applying this cycle. Could I ask you two questions about what the committee looks for? Fifteen minutes any day next week works for me." },
       { name: "Jordan Patel", role: "Alum of the program (example)", yale_tie: "Yale ’21", why: "Did this exact program and can describe the day-to-day.", url: "", ask: "What they would do differently in the application", subject: "Yale student applying to your old program", message: "Hi Jordan — I’m a Yale sophomore applying to the program you did in 2020. What’s one thing you’d do differently in the application? A short reply would help a lot." },
     ];
-    detail.people = (detail.people || []).filter((p) => p && cleanName(p.name)).slice(0, 6).map((p, i) => ({ id: "p" + i, name: clip(cleanName(p.name), 120), role: clip(p.role, 160), yale_tie: clip(p.yale_tie, 120), why: clip(p.why, 240), url: /^https?:\/\//.test(p.url || "") ? clip(p.url, 500) : "", ask: clip(p.ask, 200), subject: clip(p.subject, 200), message: clip(p.message, 1200) }));
+    detail.people = (detail.people || []).filter((p) => p && (DEMO ? cleanName(p.name) : isPerson(p.name))).slice(0, 6).map((p, i) => ({ id: "p" + i, name: clip(cleanName(p.name), 120), role: clip(p.role, 160), yale_tie: clip(p.yale_tie, 120), why: clip(p.why, 240), ...personLinks(p), ask: clip(p.ask, 200), subject: clip(p.subject, 200), message: clip(p.message, 1200) }));
     const safeUrl = (u) => (/^https?:\/\//.test(u || "") ? clip(u, 500) : "");
     const KINDS = ["deadline", "info_session", "office_hours", "event", "coffee_chat"];
     detail.events = (detail.events || []).filter((e) => e && e.title).slice(0, 12).map((e) => ({
@@ -432,8 +442,8 @@ http
         if (!b.goal) return send(res, 400, { error: "Tell us your goal first." });
         const input = { goal: clip(b.goal, 300), about: clip(b.about, 1500), profiles: clip(b.profiles, 12000), liked: (Array.isArray(b.liked) ? b.liked : []).slice(0, 12) };
         const usage = await bump(user, "plan");
-        const plan = DEMO ? demoPlan(input.goal) : await claudeJSON(PLAN_SYSTEM, planPrompt(input), "Use web_search to find the real, named people and recent public posts, articles or news for hooks. Hook sources should include the URL when you have one.");
-        if (!DEMO) for (const p of plan.people || []) p.name = cleanName(p.name);
+        const plan = DEMO ? demoPlan(input.goal) : await claudeJSON(PLAN_SYSTEM, planPrompt(input), "Use web_search to find the real, named people, their LinkedIn profiles, and recent public posts, articles or news for hooks. Hook sources should include the URL when you have one.");
+        if (!DEMO) plan.people = (plan.people || []).filter((p) => p && isPerson(p.name)).map((p) => ({ ...p, name: cleanName(p.name), ...personLinks(p) }));
         if (AUTH) {
           const [row] = await sb("plans", { method: "POST", prefer: "return=representation", body: { user_id: user.id, goal: input.goal, liked: input.liked, data: plan } });
           plan._id = row.id;

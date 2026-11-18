@@ -287,3 +287,6 @@
   .ppwho{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
   .ppwho small{color:var(--mute);font-size:13px}
   .pp .why{margin:0}
+
+  .av,.ppav{position:relative;overflow:hidden}
+  .av img,.ppav img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}

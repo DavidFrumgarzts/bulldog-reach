@@ -101,13 +101,13 @@ function paintItem(it) {
     <h3 class="dh">People to reach <small class="why">${(D.people || []).length ? reach.size + " chosen" : ""}</small></h3>
     ${(D.people || []).length ? `<div class="ppl">${D.people.map((p, i) => `
       <div class="pp ${reach.has(p.id) ? "on" : ""}">
-        <div class="pphead"><div class="ppav">${esc(initials(p.name))}</div>
+        <div class="pphead"><div class="ppav">${esc(initials(p.name))}${p.photo_url ? `<img src="${esc(p.photo_url)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}</div>
           <div class="ppwho"><b>${esc(p.name)}</b><small>${esc(p.role)}</small></div>
           <button class="${reach.has(p.id) ? "whitebtn" : "glassbtn"} smallbtn" onclick="toggleReach('${it.id}','${esc(p.id)}')">${reach.has(p.id) ? "✓ Reaching out" : "+ Reach out"}</button></div>
         ${p.yale_tie ? `<div class="yt"><span>${esc(p.yale_tie)}</span></div>` : ""}
         <p class="why">${esc(p.why)}</p>
         ${reach.has(p.id) ? `<div class="subj">Subject: ${esc(p.subject)} · Ask: ${esc(p.ask)}</div><div class="msg" id="pm${i}">${esc(p.message)}</div>
-        <div class="row3"><button class="whitebtn smallbtn" onclick="navigator.clipboard.writeText($('#pm${i}').textContent);this.textContent='Copied ✓'">Copy message</button>${p.url ? `<a class="glassbtn smallbtn" href="${esc(p.url)}" target="_blank" rel="noopener">Their page ↗</a>` : ""}</div>` : ""}
+        <div class="row3"><button class="whitebtn smallbtn" onclick="navigator.clipboard.writeText($('#pm${i}').textContent);this.textContent='Copied ✓'">Copy message</button>${p.linkedin_url || p.url ? `<a class="glassbtn smallbtn" href="${esc(p.linkedin_url || p.url)}" target="_blank" rel="noopener">${p.linkedin_url ? "LinkedIn" : "Their page"} ↗</a>` : ""}</div>` : ""}
       </div>`).join("")}</div>` : `<button class="glassbtn smallbtn" onclick="refreshItem('${it.id}')">Find people for this one</button>`}
     <h3 class="dh">Dates</h3>
     <div class="evlist">${events.length ? events.map((e) => `

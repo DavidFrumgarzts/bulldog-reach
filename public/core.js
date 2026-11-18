@@ -466,7 +466,7 @@ function render(d, goal, warning) {
     <div class="people">${people.map((p, i) => `
       <div class="pc">
         <div class="hook">
-          <div class="t"><div class="av">${esc(initials(pname(p)))}</div><span class="tag">#${i + 1} · Step ${esc(p.step)}</span></div>
+          <div class="t"><div class="av">${esc(initials(pname(p)))}${p.photo_url ? `<img src="${esc(p.photo_url)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}</div><span class="tag">#${i + 1} · Step ${esc(p.step)}</span></div>
           <div class="by">${esc(pname(p))} <span>${linkify(p.hook_source)}</span></div>
           ${p.hook ? `<q>${esc(p.hook)}</q>` : ""}
         </div>
@@ -486,7 +486,7 @@ function render(d, goal, warning) {
               ${Object.entries(STATUS_LABELS).map(([k, v]) => `<option value="${k}" ${(S.outreach[p.name] || "todo") === k ? "selected" : ""}>${v}</option>`).join("")}
             </select>
             <button class="whitebtn" onclick="copy(${i}, this)">Copy message</button>
-            <button class="glassbtn" onclick="openLinkedIn(${i})">Open LinkedIn</button>
+            <button class="glassbtn" onclick="openLinkedIn(${i})">${p.linkedin_url ? "Open LinkedIn" : p.url ? "Open their page" : "Find on LinkedIn"}</button>
             <button class="calbtn" onclick="addCal(${esc(JSON.stringify("fu-" + p.name))}, this)">📅 Follow-up in ${+p.follow_up_days || 5}d</button>
           </div>
           <div class="fu">No reply in ${+p.follow_up_days || 5} days → ${esc(p.follow_up)}</div>
@@ -516,8 +516,9 @@ function render(d, goal, warning) {
 }
 
 function openLinkedIn(i) {
-  const name = String(lastPeople[i]?.name || "").replace(/\(.*?\)/g, "").trim();
-  window.open("https://www.linkedin.com/search/results/people/?keywords=" + encodeURIComponent(name + " Yale"), "_blank");
+  const p = lastPeople[i] || {};
+  const name = String(p.name || "").replace(/\(.*?\)/g, "").trim();
+  window.open(p.linkedin_url || p.url || "https://www.linkedin.com/search/results/people/?keywords=" + encodeURIComponent(name + " Yale"), "_blank", "noopener");
 }
 function copy(i, btn) {
   navigator.clipboard.writeText($("#m" + i).textContent);
