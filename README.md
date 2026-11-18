@@ -76,3 +76,6 @@ Without a key, the app runs in **demo mode** with sample data.
 ## Team
 
 - David Frumgarzts ([@DavidFrumgarzts](https://github.com/DavidFrumgarzts))
+- Ignacio Montoro Piñeiro (ignacio.montoropineiro@yale.edu)
+- Jose Maria Salvador Martinez (josemaria.salvador@yale.edu)
+- Alwis Lim (alwis.lim@yale.edu)
