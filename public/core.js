@@ -18,6 +18,11 @@ async function boot() {
   el.hidden = !cfg.demo; el.innerHTML = "<i></i>demo mode";
   if (!cfg.demo) el.classList.add("live");
   AUTH.on = cfg.auth; AUTH.emailCode = !!cfg.emailCode; AUTH.domain = cfg.domain; AUTH.limits = cfg.limits || {};
+  // Yale NetID sign-in (CAS): shown once ITS has registered the service and CAS_ENABLED=1.
+  if ($("#netidbtn")) { $("#netidbtn").hidden = $("#netidor").hidden = !cfg.cas; }
+  if (cfg.cas && document.querySelector('.ostep[data-step="email"] .op')) document.querySelector('.ostep[data-step="email"] .op').textContent = "Sign in with your Yale NetID — same login as Canvas.";
+  const loginErr = new URLSearchParams(location.search).get("login_error");
+  if (loginErr) { setTimeout(() => { if ($("#autherr")) $("#autherr").textContent = loginErr; }, 0); history.replaceState(null, "", location.pathname); }
   if (!AUTH.on) return paintAuth();
   const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
   AUTH.sb = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, { auth: { persistSession: true, detectSessionInUrl: true, flowType: "implicit" } });
@@ -29,13 +34,13 @@ async function boot() {
     $("#authstep").innerHTML = `<p class="loading" style="padding:0"><i></i>Signing you in…</p>`;
     $("#build")?.scrollIntoView();
     const { error } = await AUTH.sb.auth.verifyOtp({ token_hash: q.get("token_hash"), type: q.get("type") || "email" });
-    history.replaceState(null, "", "/");
+    history.replaceState(null, "", "/app");
     if (error) showEmailStep(`That link expired or was already used (${error.message}). Enter your email to get a new one.`);
   }
   const { data } = await AUTH.sb.auth.getSession();
   AUTH.session = data.session;
   paintAuth();
-  if (location.pathname === "/auth/confirm" || location.hash.includes("access_token")) history.replaceState(null, "", "/");
+  if (location.pathname === "/auth/confirm" || location.hash.includes("access_token")) history.replaceState(null, "", "/app");
 }
 window.addEventListener("DOMContentLoaded", boot);
 

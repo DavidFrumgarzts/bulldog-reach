@@ -198,3 +198,9 @@
 .tip:hover .tipbox,.tip:focus .tipbox,.tip:focus-within .tipbox{display:block}
 .tipbox>b{display:block;margin-bottom:6px}
 .tipbox>span{display:block;margin:4px 0}
+
+/* Yale NetID sign-in */
+.cta.netid{width:100%;max-width:520px;height:64px;font-size:19px;border-radius:18px;gap:12px;margin-bottom:6px}
+.cta.netid[hidden],.ordiv[hidden]{display:none}
+.ordiv{display:flex;align-items:center;gap:14px;max-width:520px;margin:14px 0;color:rgba(255,255,255,.45);font-size:13px;font-weight:500}
+.ordiv::before,.ordiv::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.15)}

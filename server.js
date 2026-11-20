@@ -328,6 +328,7 @@ const clip = (s, n) => String(s || "").slice(0, n);
 
 // ---------------- cart / resume helpers ----------------
 const { ics } = require("./lib/ics");
+const cas = require("./lib/cas")({ AUTH, SB_URL, SB_SERVICE, DOMAIN, publicBase: (req) => publicBase(req) });
 const store = require("./lib/store")({ AUTH, sb, root: __dirname });
 const CART_STATUSES = ["saved", "applying", "submitted", "interview", "offer", "dropped"];
 const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || "");
@@ -433,8 +434,9 @@ http
   .createServer(async (req, res) => {
     const url = req.url.split("?")[0];
     try {
+      if (await cas.handle(req, res, url)) return; // Yale NetID sign-in
       if (url === "/api/config" || url === "/api/status") {
-        return send(res, 200, { demo: DEMO, model: MODEL, emailCode: process.env.AUTH_EMAIL_CODE === "1", auth: AUTH, domain: DOMAIN, limits: LIMITS, supabaseUrl: AUTH ? SB_URL : null, supabaseAnonKey: AUTH ? SB_ANON : null });
+        return send(res, 200, { demo: DEMO, model: MODEL, emailCode: process.env.AUTH_EMAIL_CODE === "1", cas: cas.enabled, auth: AUTH, domain: DOMAIN, limits: LIMITS, supabaseUrl: AUTH ? SB_URL : null, supabaseAnonKey: AUTH ? SB_ANON : null });
       }
       if (req.method === "POST" && url === "/api/plan") {
         const user = await guard(req);
