@@ -4,16 +4,15 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Bulldog Reach</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="/styles.css" />
 <link rel="stylesheet" href="/app.css" />
+<link rel="stylesheet" href="/theme.css" />
 </head>
 <body class="appbody">
 
 <!-- ================= ONBOARDING ================= -->
 <div id="onb" class="onb" hidden>
-  <div class="onbtop"><a href="/" class="logo" style="text-decoration:none;color:#fff">B_</a><div class="dots" id="dots"></div><span></span></div>
+  <div class="onbtop"><a href="/" class="brandmark" style="padding:0"><i>B</i>Bulldog Reach</a><div class="dots" id="dots"></div><span></span></div>
 
   <!-- 1. email -->
   <section class="ostep" data-step="email">
@@ -24,7 +23,7 @@
       <div id="authstep">
         <form id="authform" class="authform" onsubmit="sendCode(event)">
           <input id="email" type="email" placeholder="you@yale.edu" autocomplete="email" required />
-          <button class="cta" id="authbtn">Continue →</button>
+          <button class="cta" id="authbtn">Continue</button>
         </form>
       </div>
       <div id="autherr" class="err" style="margin-top:10px"></div>
@@ -46,7 +45,7 @@
     <div id="li_onb" class="licard"></div>
     <div class="lior" hidden>or upload your profile PDF (adds your full experience to your resume)</div>
     <label class="drop odrop big"><b>💼 Your LinkedIn PDF</b><span id="o_lname">Profile.pdf from LinkedIn</span><input id="o_lfile" type="file" accept=".pdf" onchange="$('#o_lname').textContent=this.files[0]?.name||'Profile.pdf from LinkedIn'" /></label>
-    <div class="onav"><button class="linkbtn" onclick="go(-1)">Back</button><span></span><button class="linkbtn" onclick="$('#o_lfile').value='';$('#o_lname').textContent='Profile.pdf from LinkedIn';go(1)">Skip</button><button class="cta ocont" onclick="go(1)">Continue →</button></div>
+    <div class="onav"><button class="linkbtn" onclick="go(-1)">Back</button><span></span><button class="linkbtn" onclick="$('#o_lfile').value='';$('#o_lname').textContent='Profile.pdf from LinkedIn';go(1)">Skip</button><button class="cta ocont" onclick="go(1)">Continue</button></div>
   </section>
 
   <!-- 3. resume -->
@@ -57,7 +56,7 @@
     <label class="drop odrop big"><b>📄 Your resume</b><span id="o_rname">PDF or Word (.docx)</span><input id="o_rfile" type="file" accept=".pdf,.docx,.txt" onchange="$('#o_rname').textContent=this.files[0]?.name||'';parseInBackground()" /></label>
     <div id="o_rnote" class="why"></div>
     <div id="o_rerr" class="err"></div>
-    <div class="onav"><button class="linkbtn" onclick="go(-1)">Back</button><span></span><button class="linkbtn" onclick="afterResume()">Skip for now</button><button class="cta ocont" id="o_rbtn" onclick="parseAndContinue()">Continue →</button></div>
+    <div class="onav"><button class="linkbtn" onclick="go(-1)">Back</button><span></span><button class="linkbtn" onclick="afterResume()">Skip for now</button><button class="cta ocont" id="o_rbtn" onclick="parseAndContinue()">Continue</button></div>
   </section>
 
   <!-- 4. about you -->
@@ -66,7 +65,7 @@
     <h1 class="oh">Tell us about you.</h1>
     <div id="o_sum" class="osum" hidden></div>
     <div class="oq"><div class="ol">What are you into? <small>pick any</small></div><div class="chips2" data-k="fields" data-multi="1">
-      <button>💻 Software / Tech</button><button>🤖 AI / ML</button><button>📈 Finance</button><button>🧭 Consulting</button><button>🔬 STEM research</button><button>📚 Humanities / social science research</button><button>🏛️ Policy / Government</button><button>🚀 Startups / VC</button><button>🧬 Health / Bio</button><button>🌍 Climate / Energy</button><button>🎨 Media / Arts / Design</button><button>🤝 Nonprofit / Social impact</button>
+      <button>Software / Tech</button><button>AI / ML</button><button>Finance</button><button>Consulting</button><button>STEM research</button><button>Humanities / social science research</button><button>Policy / Government</button><button>Startups / VC</button><button>Health / Bio</button><button>Climate / Energy</button><button>Media / Arts / Design</button><button>Nonprofit / Social impact</button>
     </div></div>
     <div class="oq"><div class="ol">What year are you?</div><div class="chips2" data-k="year">
       <button>First-year</button><button>Sophomore</button><button>Junior</button><button>Senior</button><button>Grad student</button>
@@ -78,7 +77,7 @@
       <button>New Haven</button><button>New York</button><button>Bay Area</button><button>Boston</button><button>DC</button><button>Remote</button><button>Abroad</button><button>Anywhere</button>
     </div></div>
     <div id="o_aerr" class="err"></div>
-    <div class="onav"><button class="linkbtn" onclick="go(-1)">Back</button><span></span><button class="cta ocont" onclick="aboutContinue()">Continue →</button></div>
+    <div class="onav"><button class="linkbtn" onclick="go(-1)">Back</button><span></span><button class="cta ocont" onclick="aboutContinue()">Continue</button></div>
   </section>
 
   <!-- 5. goal -->
@@ -89,20 +88,23 @@
     <div class="chips2 sugg" id="o_sugg"></div>
     <div class="oq" style="margin-top:22px"><div class="ol">Anyone specific in mind? <small>optional — names, LinkedIn links, or pasted profiles</small></div>
       <textarea id="o_people" class="oinput" style="height:96px;padding:16px 20px;font-size:15px" placeholder="e.g. Prof. Arman Cohan; a Yale alum at xAI; linkedin.com/in/…"></textarea></div>
-    <div class="onav"><button class="linkbtn" onclick="go(-1)">Back</button><span></span><button class="cta ocont" onclick="finishOnboarding()">Let’s go →</button></div>
+    <div class="onav"><button class="linkbtn" onclick="go(-1)">Back</button><span></span><button class="cta ocont" onclick="finishOnboarding()">Let’s go</button></div>
   </section>
 </div>
 
 <!-- ================= APP (chat) ================= -->
 <div id="shell" class="shell" hidden>
   <aside class="side" id="side">
-    <div class="sidetop"><a href="/" class="logo" style="text-decoration:none;color:#fff">B_</a><span class="sidebrand">Bulldog Reach</span></div>
-    <button class="newchat" onclick="newChat()">＋ New chat</button>
+    <div class="sidetop"><a href="/" class="brandmark" style="padding:0 0 8px"><i>B</i>Bulldog Reach</a></div>
+    <button class="newchat" onclick="newChat()">New game plan</button>
     <nav class="sidenav">
-      <button id="mylistbtn" onclick="openList()">📌 My list <b id="cartcount" class="badge"></b></button>
-      <button id="resumebtn" onclick="openResume()">📄 My resume</button>
-      <button onclick="openCalendar()">📅 Calendar sync</button>
-      <button onclick="location.href='/workspace'">🧭 Workspace</button>
+      <button id="mylistbtn" onclick="openList()">My list <b id="cartcount" class="badge"></b></button>
+      <button id="resumebtn" onclick="openResume()">My resume</button>
+      <button onclick="openCalendar()">Calendar sync</button>
+      <button onclick="location.href='/workspace#ask'">Ask Bulldog</button>
+      <button onclick="location.href='/workspace#discover'">Discover</button>
+      <button onclick="location.href='/workspace#pipeline'">Pipeline</button>
+      <button onclick="location.href='/workspace#profile'">Profile</button>
     </nav>
     <div id="li_side" class="licard side-li"></div>
     <div class="sidelabel">Chats</div>

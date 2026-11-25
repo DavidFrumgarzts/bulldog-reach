@@ -1,4 +1,4 @@
-// Boot Outreach workspace: discovery → shortlist → application workspace → reviewed submission, plus contacts & outreach.
+// Bulldog Reach workspace: discovery, shortlist, application workspace and reviewed submission, plus contacts and outreach.
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -53,8 +53,27 @@ async function loadState() {
   const [st, s, o, a] = await Promise.all([api("/state"), api("/searches"), api("/opps?state=all"), api("/apps")]);
   W.state = st; W.searches = s.searches; W.opps = o.opportunities; W.apps = a.apps;
 }
+const PAGES = {
+  ask: ["Ask Bulldog", "Searches the official job boards and the live web. Saves only what you ask it to."],
+  discover: ["Discover", "Official postings from employer job boards, ranked by how close each role is to what you want."],
+  pipeline: ["Pipeline", "Every application, what's due, and what's blocking it."],
+  contacts: ["Contacts", "People you know or found, and every message you've approved."],
+  answers: ["Answers", "Approved answers you can reuse on applications."],
+  profile: ["Profile", "What drafts and fit scores are built from. Nothing here is guessed."],
+  data: ["Your data", "Export, import or delete everything in your workspace."],
+};
+function paintCounts() {
+  const set = (id, n) => { const el = $(id); if (el) el.textContent = n ? String(n) : ""; };
+  set("#n_discover", (W.opps || []).filter((o) => o.user_state === "new").length);
+  set("#n_pipeline", (W.apps || []).filter((a) => !CLOSED.includes(a.stage)).length);
+  set("#n_contacts", (W.contacts || []).length);
+}
 function show(tab) {
   W.tab = tab; history.replaceState(null, "", "#" + tab);
+  const [title, sub] = PAGES[tab] || ["Bulldog Reach", ""];
+  $("#pg_title").textContent = title; $("#pg_sub").textContent = sub; document.title = `${title} · Bulldog Reach`;
+  $("#sidebar")?.classList.remove("open");
+  paintCounts();
   $$(".tab").forEach((s) => (s.hidden = s.id !== "tab-" + tab));
   $$(".wstabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === tab));
   ({ ask: loadAsk, discover: paintDiscover, pipeline: paintPipeline, contacts: loadContacts, answers: loadAnswers, profile: paintProfile, data: paintData })[tab]?.();
@@ -105,7 +124,7 @@ function paintAskList() {
 function newAsk() {
   W.askThread = null; paintAskList();
   const i = W.state.integrations;
-  $("#ask_thread").innerHTML = `<div class="askhero"><h2>Ask Bulldog</h2><p>Searches the official job boards and the live web, checks your pipeline and profile, and can save what it finds. It won't send anything or apply for you.</p><div class="starter">${ASK_STARTERS.map((s) => `<button class="btn sm" onclick="$('#ask_in').value=this.textContent;$('#ask_in').focus()">${esc(s)}</button>`).join("")}</div></div>`;
+  $("#ask_thread").innerHTML = `<div class="askhero"><h2>What do you want to find?</h2><p>Searches the official job boards and the live web, checks your pipeline and profile, and can save what it finds. It won't send anything or apply for you.</p><div class="starter">${ASK_STARTERS.map((s) => `<button class="btn sm" onclick="$('#ask_in').value=this.textContent;$('#ask_in').focus()">${esc(s)}</button>`).join("")}</div></div>`;
   $("#ask_note").textContent = `Replies: ${W.state.profile.tier === "pro" ? "Pro · " + i.ai_models.pro : "Basic · " + i.ai_models.basic}. Web searches: ${i.ai_models.search}. Paid per use, with daily limits.`;
 }
 function renderMsg(m) {
@@ -200,7 +219,7 @@ function oppCard(o) {
     <div class="meta small">Source: ${esc(o.source?.ats)} · ${o.status} · checked ${ago(o.last_checked)}</div>
     <div class="acts">
       <button class="btn sm" onclick="openOpp('${o.id}')">Details &amp; evidence</button>
-      ${o.user_state !== "saved" ? `<button class="btn sm primary" onclick="setOpp('${o.id}','saved')">Save</button>` : `<button class="btn sm" onclick="show('pipeline')">In pipeline →</button>`}
+      ${o.user_state !== "saved" ? `<button class="btn sm primary" onclick="setOpp('${o.id}','saved')">Save</button>` : `<button class="btn sm" onclick="show('pipeline')">In pipeline</button>`}
       ${o.user_state !== "dismissed" ? `<button class="btn sm" onclick="setOpp('${o.id}','dismissed')">Dismiss</button>` : `<button class="btn sm" onclick="setOpp('${o.id}','new')">Restore</button>`}
     </div></div>`;
 }
@@ -231,7 +250,7 @@ function evidenceTable(o) {
     const e = ev[k] || {};
     const val = e.value ? esc(e.value) : `<span class="ns">${esc(e.status || "not stated")}</span>`;
     const src = e.source_url ? ` <a href="${esc(safeUrl(e.source_url))}" target="_blank" rel="noopener">source</a> · ${fmtDate(e.checked_at)}${e.confidence ? ` · ${esc(e.method)} · ${esc(e.confidence)} confidence` : ""}` : "";
-    return `<tr><th>${label}</th><td>${val}${e.quote ? `<div class="quote">“${esc(e.quote)}”</div>` : ""}<div class="small muted">${src}</div></td></tr>`;
+    return `<tr><th>${label}</th><td>${val}${e.quote ? `<div class="quote"><span>“${esc(e.quote)}”</span></div>` : ""}<div class="small muted">${src}</div></td></tr>`;
   }).join("");
   const req = ev.required_qualifications?.value;
   return `<table class="ev">${rows}<tr><th>Requirements</th><td>${req ? `<ul>${req.map((r) => `<li>${esc(r)}</li>`).join("")}</ul>` : `<span class="ns">not stated in a list we could read</span>`}</td></tr></table>`;
@@ -247,7 +266,7 @@ function fitBlock(o) {
       ${(x.unmatched || []).map((r) => `<div class="small muted">· ${esc(r)} <i>(no confirmed claim supports this)</i></div>`).join("")}
       ${(x.flags || []).map((fl) => `<div class="small" style="color:#ff9d90">⚠ ${esc(fl)}</div>`).join("")}</div>
     <div class="note ${eligCls(e.state) === "r" ? "r" : eligCls(e.state) === "g" ? "g" : ""}"><b>Eligibility: ${esc(e.label || "?")}</b> — ${esc(e.note || "")}
-      ${(e.quotes || []).map((q) => `<div class="quote small">“${esc(q.quote)}” <a href="${esc(safeUrl(q.source_url))}" target="_blank" rel="noopener">source</a></div>`).join("")}
+      ${(e.quotes || []).map((q) => `<div class="quote"><span>“${esc(q.quote)}”</span> <a class="small" href="${esc(safeUrl(q.source_url))}" target="_blank" rel="noopener">source</a></div>`).join("")}
       <div class="small muted">${esc(e.disclaimer || "")}</div></div>`;
 }
 async function openOpp(id) {

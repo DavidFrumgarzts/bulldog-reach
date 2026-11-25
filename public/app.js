@@ -171,7 +171,7 @@ function setAbout() {
 }
 // resume.js sets #about only when empty; keep ours in sync whenever the resume loads.
 const _paintOnb = paintOnboarding;
-paintOnboarding = function () { $("#onboard").hidden = true; $("#resumebtn").textContent = RS.resume?.base ? "📄 My resume" : "📄 Add resume"; setAbout(); };
+paintOnboarding = function () { $("#onboard").hidden = true; $("#resumebtn").textContent = RS.resume?.base ? "My resume" : "Add resume"; setAbout(); };
 
 // ---------------- chat ----------------
 function showShell() { $("#onb").hidden = true; $("#shell").hidden = false; }
@@ -201,7 +201,7 @@ function newChat() {
   $("#ask").value = ""; $("#ask").focus();
 }
 function aiOffNote() {
-  return `<div class="aioff"><b>AI chat is off.</b> Searching and planning here call the Anthropic API, which is paid per use, and no key is set. Everything you need is in the free Workspace: official job boards, evidence, fit, applications and outreach.<div><a class="cta" href="/workspace#discover" style="display:inline-flex;width:auto;height:48px;padding:0 22px;margin-top:12px;text-decoration:none;align-items:center">Open Workspace →</a></div></div>`;
+  return `<div class="aioff"><b>AI chat is off.</b> Searching and planning here call the Anthropic API, which is paid per use, and no key is set. Everything you need is in the free Workspace: official job boards, evidence, fit, applications and outreach.<div><a class="cta" href="/workspace#discover" style="display:inline-flex;width:auto;height:48px;padding:0 22px;margin-top:12px;text-decoration:none;align-items:center">Open the Workspace</a></div></div>`;
 }
 function addUser(text) {
   $("#thread .empty-hero")?.remove();
@@ -210,7 +210,7 @@ function addUser(text) {
 }
 function addAssistant(html) {
   const d = document.createElement("div"); d.className = "msg-a";
-  d.innerHTML = `<div class="av">B_</div><div class="body">${html}</div>`;
+  d.innerHTML = `<div class="av">B</div><div class="body">${html}</div>`;
   $("#thread").appendChild(d);
   return d.querySelector(".body");
 }

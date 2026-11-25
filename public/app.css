@@ -1,8 +1,8 @@
 /* App shell: onboarding + ChatGPT-style chat. Builds on styles.css. */
-.appbody{background:#0E0806;min-height:100vh}
+.appbody{background:var(--color-bg-app);min-height:100vh}
 
 /* ---------- onboarding ---------- */
-.onb{min-height:100vh;display:flex;flex-direction:column;background:radial-gradient(80% 70% at 70% 0%,#5A3014 0%,#140B06 60%,#0E0806 100%)}
+.onb{min-height:100vh;display:flex;flex-direction:column;background:radial-gradient(80% 70% at 70% 0%,#1A2A4D 0%,var(--color-bg-app) 60%,var(--color-bg-app) 100%)}
 .onb[hidden],.shell[hidden]{display:none}
 .onbtop{display:flex;justify-content:space-between;align-items:center;padding:28px 40px}
 .dots{display:flex;gap:8px}
@@ -25,23 +25,23 @@
 .ol{font-size:17px;font-weight:600;margin-bottom:12px}
 .ol small{font-weight:500;color:var(--mute);margin-left:6px}
 .chips2{display:flex;flex-wrap:wrap;gap:10px}
-.chips2 button{padding:11px 18px;border-radius:99px;font:500 15px Inter;color:#fff;background:rgba(255,255,255,.07);border:1px solid var(--stroke);transition:.15s}
+.chips2 button{padding:11px 18px;border-radius:99px;font:500 15px var(--font-sans);color:#fff;background:rgba(255,255,255,.07);border:1px solid var(--stroke);transition:.15s}
 .chips2 button:hover{background:rgba(255,255,255,.14)}
 .chips2 button.on{background:#fff;color:#111;border-color:#fff}
-.ogoal{width:100%;padding:22px;border-radius:22px;background:rgba(0,0,0,.28);border:1px solid var(--stroke);font:600 24px/1.35 Inter;letter-spacing:-.01em;resize:none}
+.ogoal{width:100%;padding:22px;border-radius:22px;background:rgba(0,0,0,.28);border:1px solid var(--stroke);font:600 24px/1.35 var(--font-sans);letter-spacing:-.01em;resize:none}
 .sugg{margin-top:14px}
 .sugg button{font-size:14px}
 
 /* ---------- shell ---------- */
 .shell{display:block}
-.side{position:fixed;inset:0 auto 0 0;width:272px;background:#0A0604;border-right:1px solid var(--stroke);display:flex;flex-direction:column;padding:18px 14px;z-index:40;transition:transform .25s}
+.side{position:fixed;inset:0 auto 0 0;width:272px;background:var(--color-bg-surface);border-right:1px solid var(--stroke);display:flex;flex-direction:column;padding:18px 14px;z-index:40;transition:transform .25s}
 .sidetop{display:flex;align-items:center;gap:10px;padding:4px 8px 16px}
 .sidetop .logo{font-size:26px}
 .sidebrand{font-weight:600;font-size:15px;color:rgba(255,255,255,.8)}
-.newchat{display:flex;align-items:center;gap:8px;width:100%;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.08);border:1px solid var(--stroke);color:#fff;font:600 15px Inter;cursor:pointer}
+.newchat{display:flex;align-items:center;gap:8px;width:100%;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.08);border:1px solid var(--stroke);color:#fff;font:600 15px var(--font-sans);cursor:pointer}
 .newchat:hover{background:rgba(255,255,255,.14)}
 .sidenav{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:2px;margin:14px 0 6px;padding-top:0}
-.sidenav button{display:flex;align-items:center;gap:8px;text-align:left;padding:10px 12px;border-radius:12px;background:none;border:0;color:rgba(255,255,255,.85);font:500 14.5px Inter;cursor:pointer}
+.sidenav button{display:flex;align-items:center;gap:8px;text-align:left;padding:10px 12px;border-radius:12px;background:none;border:0;color:rgba(255,255,255,.85);font:500 14.5px var(--font-sans);cursor:pointer}
 .sidenav button:hover{background:rgba(255,255,255,.07)}
 .sidelabel{font-size:12px;font-weight:600;color:rgba(255,255,255,.4);padding:14px 12px 6px;text-transform:uppercase;letter-spacing:.08em}
 .side-hist{flex:1;overflow:auto;gap:2px}
@@ -58,20 +58,20 @@
 
 .main{margin-left:272px;min-height:100vh;padding-bottom:150px}
 .thread{width:min(980px,100% - 48px);margin:0 auto;padding:40px 0 20px;display:flex;flex-direction:column;gap:22px}
-.msg-u{align-self:flex-end;max-width:70%;padding:14px 20px;border-radius:24px 24px 6px 24px;background:#2A1D14;border:1px solid rgba(242,178,102,.25);font-size:16.5px;line-height:1.45;white-space:pre-wrap}
+.msg-u{align-self:flex-end;max-width:70%;padding:14px 20px;border-radius:24px 24px 6px 24px;background:var(--color-bg-raised);border:1px solid rgba(91,155,255,.25);font-size:16.5px;line-height:1.45;white-space:pre-wrap}
 .msg-a{display:flex;gap:14px;align-items:flex-start}
 .msg-a .av{flex:none;width:34px;height:34px;font-size:13px;background:#fff;color:#111;letter-spacing:-.04em}
 .msg-a .body{flex:1;min-width:0;font-size:16px;line-height:1.55}
 .msg-a .body > p{margin:4px 0 10px}
 .chips-inline{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
-.chips-inline button{padding:9px 14px;border-radius:99px;font:500 14px Inter;color:#fff;background:rgba(255,255,255,.07);border:1px solid var(--stroke);cursor:pointer}
+.chips-inline button{padding:9px 14px;border-radius:99px;font:500 14px var(--font-sans);color:#fff;background:rgba(255,255,255,.07);border:1px solid var(--stroke);cursor:pointer}
 .chips-inline button:hover{background:rgba(255,255,255,.14)}
 
 .empty-hero{text-align:center;margin:12vh auto 0;max-width:720px}
 .empty-hero h1{font-size:46px;letter-spacing:-.035em;line-height:1.05;margin:0 0 12px}
 .empty-hero p{color:var(--mute);font-size:17px;margin:0 0 26px}
 .starter{display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:left}
-.starter button{padding:16px 18px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid var(--stroke);color:#fff;font:500 15px Inter;cursor:pointer;line-height:1.35}
+.starter button{padding:16px 18px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid var(--stroke);color:#fff;font:500 15px var(--font-sans);cursor:pointer;line-height:1.35}
 .starter button small{display:block;color:var(--mute);font-size:13px;margin-top:4px}
 .starter button:hover{background:rgba(255,255,255,.1)}
 
@@ -83,7 +83,7 @@
 
 /* in-chat versions of deck + plan */
 .decksec.inchat{background:none;padding:0}
-.inchat .deckgrid{grid-template-columns:1fr 380px;gap:32px;padding:24px;border-radius:28px;background:linear-gradient(135deg,rgba(242,178,102,.10),rgba(255,255,255,.03));border:1px solid var(--stroke)}
+.inchat .deckgrid{grid-template-columns:1fr 380px;gap:32px;padding:24px;border-radius:28px;background:linear-gradient(135deg,rgba(91,155,255,.10),rgba(255,255,255,.03));border:1px solid var(--stroke)}
 .inchat .deckh{font-size:30px;letter-spacing:-.025em;margin:0}
 .inchat .stack{width:360px;height:480px}
 .inchat .oc h3{font-size:28px}
@@ -148,7 +148,7 @@
 .jc-chips{display:flex;flex-wrap:wrap;gap:6px}
 .jc-chips span{font-size:12px;font-weight:600;padding:5px 10px;border-radius:99px}
 .c-dl{background:#FFE9B8;color:#7A4A00}.c-dl.soon{background:#FFD6D0;color:#9A1F12}
-.c-yt{background:#F2E2D0;color:#7A4A22}
+.c-yt{background:#F2E2D0;color:#24375F}
 .jc-stats{display:grid;grid-template-columns:repeat(3,1fr);margin-top:auto;padding:12px 6px;border-radius:16px;background:#F3EBE0;text-align:center}
 .jc-stats b{display:block;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .jc-stats small{font-size:11px;color:#6B5B4D}
@@ -157,7 +157,7 @@
 .jc.skel i:nth-child(1){width:40%;height:40px}.jc.skel i:nth-child(2){width:85%;height:26px}.jc.skel i:nth-child(3){width:60%;height:26px}.jc.skel i:nth-child(4){width:45%}.jc.skel i:nth-child(5){height:64px;margin-top:auto}
 @keyframes shimmer{to{background-position:-200% 0}}
 .swbtns{margin-top:18px}
-.swb.yes{width:auto;padding:0 28px;border-radius:99px;font:600 17px Inter;color:#111}
+.swb.yes{width:auto;padding:0 28px;border-radius:99px;font:600 17px var(--font-sans);color:#111}
 .swb.yes::after{content:" Save"}
 .badge.bump{animation:bump .5s cubic-bezier(.3,1.6,.5,1)}
 @keyframes bump{40%{transform:scale(1.6)}}
@@ -216,3 +216,38 @@
 .side-li .libtn{height:38px;padding:0 14px;font-size:14px;border-radius:11px;width:100%;justify-content:center}
 .side-li .libtn svg{width:16px;height:16px}
 .aioff{margin-top:22px;padding:16px 18px;border-radius:16px;background:rgba(255,214,10,.08);border:1px solid rgba(255,214,10,.28);font-size:15px;line-height:1.5;text-align:left}
+
+/* ---------- Bulldog design system (theme.css) applied to the original chat + onboarding ---------- */
+.k{text-transform:none;letter-spacing:0;font-size:13px;font-weight:500;color:var(--color-text-muted)}
+.oh{font-size:34px;line-height:40px;font-weight:700;letter-spacing:-.015em;margin:8px 0 12px}
+.op,.lede{color:var(--color-text-secondary)}
+.cta{width:auto;height:48px;padding:0 24px;border-radius:var(--radius-md);background:var(--color-accent-default);color:var(--color-accent-on);font-size:16px;font-weight:600;gap:10px}
+.cta:hover{background:var(--blue-300)}
+.ocont{height:48px;font-size:15px;border-radius:var(--radius-md)}
+.whitebtn{background:var(--color-accent-default);color:var(--color-accent-on)}
+.glassbtn{background:var(--color-bg-raised);border-color:var(--color-border-strong)}
+.linkbtn{color:var(--color-accent-text)}
+.chips2 button{background:var(--color-bg-raised);border-color:var(--color-border-default);font-size:14px;padding:8px 14px}
+.chips2 button.on{background:var(--color-accent-tint);color:var(--color-accent-text);border-color:var(--color-accent-default)}
+.oinput,.ogoal{background:var(--color-bg-surface);border:1px solid var(--color-border-default);border-radius:var(--radius-lg)}
+.ogoal{font-size:20px;font-weight:600}
+.drop,.odrop{background:var(--color-bg-surface);border:1px dashed var(--color-border-strong);border-radius:var(--radius-lg)}
+.dots i{background:var(--color-border-strong)}
+.dots i.on{background:var(--color-accent-default)}
+.onb{background:var(--color-bg-app)}
+.aioff{background:var(--color-status-caution-tint);border-color:transparent;border-radius:var(--radius-lg)}
+/* chat shell */
+.side{background:var(--color-bg-surface);border-right-color:var(--color-border-default)}
+.sidebrand{font-weight:600}
+.newchat{background:var(--color-bg-raised);border-color:var(--color-border-strong);border-radius:var(--radius-md);font-size:14px}
+.sidenav button{border-radius:var(--radius-md);color:var(--color-text-secondary);font-size:13px;font-weight:500}
+.sidenav button:hover{background:var(--color-bg-raised);color:var(--color-text-primary)}
+.msg-u{background:var(--color-bg-raised);border-color:transparent;border-radius:var(--radius-lg)}
+.msg-a .av{background:var(--color-accent-default);color:var(--color-accent-on);border-radius:var(--radius-sm)}
+.starter button,.chips-inline button{background:var(--color-bg-surface);border-color:var(--color-border-default);border-radius:var(--radius-lg)}
+.starter button:hover,.chips-inline button:hover{background:var(--color-bg-raised)}
+.composer{background:var(--color-bg-surface);border:1px solid var(--color-border-strong);border-radius:var(--radius-xl);box-shadow:var(--shadow-raised)}
+.composer .send{background:var(--color-accent-default);color:var(--color-accent-on);border-radius:var(--radius-md)}
+.modal,.rw{background:var(--color-bg-app)}
+.sidelabel{text-transform:none;letter-spacing:0;font-size:12px;font-weight:500;color:var(--color-text-muted)}
+.aioff{margin:20px 0 16px}

@@ -3,30 +3,36 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Boot Outreach — workspace</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="/styles.css" />
+<title>Bulldog Reach</title>
+<link rel="stylesheet" href="/theme.css" />
 <link rel="stylesheet" href="/workspace.css" />
 </head>
 <body class="ws">
-<header class="wshead">
-  <a href="/app" class="logo" title="Back to chat">B_</a>
-  <span class="wsbrand">Boot Outreach <small>workspace</small></span>
-  <nav class="wstabs" role="tablist">
-    <button data-tab="ask" role="tab">Ask</button>
-    <button data-tab="discover" role="tab">Discover</button>
-    <button data-tab="pipeline" role="tab">Pipeline</button>
-    <button data-tab="contacts" role="tab">Contacts</button>
-    <button data-tab="answers" role="tab">Answers</button>
-    <button data-tab="profile" role="tab">Profile</button>
-    <button data-tab="data" role="tab">Your data</button>
+<div class="app-shell">
+<aside class="sidebar" id="sidebar">
+  <a class="brandmark" href="/"><i>B</i>Bulldog Reach</a>
+  <nav class="wstabs" aria-label="Sections">
+    <button class="nav-item" data-tab="ask"><span>Ask</span></button>
+    <button class="nav-item" data-tab="discover"><span>Discover</span><small id="n_discover"></small></button>
+    <button class="nav-item" data-tab="pipeline"><span>Pipeline</span><small id="n_pipeline"></small></button>
+    <button class="nav-item" data-tab="contacts"><span>Contacts</span><small id="n_contacts"></small></button>
+    <button class="nav-item" data-tab="answers"><span>Answers</span></button>
+    <hr />
+    <button class="nav-item" data-tab="profile"><span>Profile</span></button>
+    <button class="nav-item" data-tab="data"><span>Your data</span></button>
   </nav>
+  <div class="foot">
+    <a href="/app">Game plan (swipe &amp; plan chat)</a>
+    <span id="who"></span>
+  </div>
+</aside>
+<div class="mainwrap">
+<header class="topbar">
+  <button class="btn ghost sm menu-toggle" onclick="$('#sidebar').classList.toggle('open')" aria-label="Open menu">Menu</button>
+  <div class="title"><h1 id="pg_title">Bulldog Reach</h1><p id="pg_sub"></p></div>
   <div id="tier" class="tier" title="Which model writes your drafts and chat replies. Web search always uses Sonnet."></div>
-  <span id="who" class="who"></span>
 </header>
-
-<main class="wsmain">
+<main class="wsmain content">
   <!-- ASK BULLDOG -->
   <section id="tab-ask" class="tab" hidden>
     <div class="askgrid">
@@ -219,6 +225,8 @@
     </div>
   </section>
 </main>
+</div>
+</div>
 
 <div id="drawer" class="drawer" hidden><div class="drawerin"><button class="x" onclick="closeDrawer()" aria-label="Close">×</button><div id="drawerbody"></div></div></div>
 <div id="toast" class="toast" hidden></div>

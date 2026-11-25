@@ -59,6 +59,14 @@ A free, evidence-first job-search workspace built from [the Boot Outreach PRD](d
 
 It costs nothing to run. Roles are ranked by **meaning**, not keywords, using a small sentence-embedding model (all-MiniLM-L6-v2) that runs on your machine through transformers.js. It downloads once (~23 MB) and needs no key. No paid APIs. Optional integrations are listed in [docs/COSTS.md](docs/COSTS.md). A starter profile drawn from the PRD is in [docs/seed-alwis.json](docs/seed-alwis.json) (Workspace → Your data → Import). Every claim in it starts as *unreviewed*.
 
+## Design
+
+The UI follows one design system, defined in Figma ([Bulldog Reach — Redesign](https://www.figma.com/design/YYfpJf8sfaln8dvonIbWxc)) and mirrored in [`public/theme.css`](public/theme.css). Token names match the Figma variables (for example `Color/bg/app` → `var(--color-bg-app)`). The Figma file has three pages: the design system (tokens, type styles, components), the redesigned screens, and captures of the previous UI for reference.
+
+- **Palette:** Yale-night navy surfaces, one action blue, and highlighter yellow reserved for quoted evidence from job postings.
+- **Type:** Schibsted Grotesk throughout; Newsreader italic only for quotes from postings.
+- **Shell:** one sidebar for Ask, Discover, Pipeline, Contacts, Answers, Profile and Your data. The original swipe-and-plan chat lives at `/app`.
+
 ## Why
 
 Yale gives you the network, but nothing helps you use it. LinkedIn tells you who exists. Bulldog Reach tells you **who can actually move your goal forward, what to ask them, and what to say**, using what they posted this week.
