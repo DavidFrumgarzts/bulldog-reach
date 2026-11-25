@@ -46,7 +46,8 @@ async function boot() {
   } else $("#who").textContent = cfg.demo ? "local mode · no sign-in" : "local mode";
   $$(".wstabs button").forEach((b) => (b.onclick = () => show(b.dataset.tab)));
   await loadState();
-  show(location.hash.slice(1) || (W.state.claims.length ? "discover" : "profile"));
+  paintTier();
+  show(location.hash.slice(1) || (!W.state.claims.length ? "profile" : W.state.integrations.ai ? "ask" : "discover"));
 }
 async function loadState() {
   const [st, s, o, a] = await Promise.all([api("/state"), api("/searches"), api("/opps?state=all"), api("/apps")]);
@@ -56,8 +57,86 @@ function show(tab) {
   W.tab = tab; history.replaceState(null, "", "#" + tab);
   $$(".tab").forEach((s) => (s.hidden = s.id !== "tab-" + tab));
   $$(".wstabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === tab));
-  ({ discover: paintDiscover, pipeline: paintPipeline, contacts: loadContacts, answers: loadAnswers, profile: paintProfile, data: paintData })[tab]?.();
+  ({ ask: loadAsk, discover: paintDiscover, pipeline: paintPipeline, contacts: loadContacts, answers: loadAnswers, profile: paintProfile, data: paintData })[tab]?.();
 }
+
+// ---------- Basic / Pro ----------
+function paintTier() {
+  const i = W.state.integrations, t = W.state.profile.tier === "pro" ? "pro" : "basic";
+  if (!i.ai) { $("#tier").innerHTML = ""; return; }
+  $("#tier").innerHTML = [["basic", "Basic", i.ai_models.basic], ["pro", "Pro", i.ai_models.pro]].map(([k, l, m]) => `<button class="${t === k ? "on" : ""}" title="${esc(l)}: drafts and chat replies use ${esc(m)}. Web search always uses ${esc(i.ai_models.search)}." onclick="setTier('${k}')">${l}</button>`).join("");
+}
+async function setTier(t) {
+  try { const { profile } = await api("/tier", { method: "PUT", body: { tier: t } }); W.state.profile = profile; paintTier(); toast(t === "pro" ? `Pro: writing with ${W.state.integrations.ai_models.pro}` : `Basic: writing with ${W.state.integrations.ai_models.basic}`); }
+  catch (e) { toast(e.message); }
+}
+
+// ---------- Ask Bulldog ----------
+// Light markdown: escape everything, then allow **bold**, [text](url), bare URLs, "- " bullets and paragraphs.
+function md(text) {
+  const inline = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (m, t, u) => `<a href="${u}" target="_blank" rel="noopener">${t}</a>`)
+    .replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, (m, p, u) => `${p}<a href="${u}" target="_blank" rel="noopener">${u.length > 60 ? u.slice(0, 57) + "…" : u}</a>`);
+  const out = []; let list = null;
+  for (const line of String(text || "").split("\n")) {
+    const b = line.match(/^\s*(?:[-*•]|\d+\.)\s+(.*)$/);
+    if (b) { (list ||= []).push(`<li>${inline(b[1])}</li>`); continue; }
+    if (list) { out.push(`<ul>${list.join("")}</ul>`); list = null; }
+    if (line.trim()) out.push(`<p>${inline(line.replace(/^#+\s*/, ""))}</p>`);
+  }
+  if (list) out.push(`<ul>${list.join("")}</ul>`);
+  return out.join("");
+}
+const ASK_STARTERS = ["Find AI or robotics internships in NYC or the Bay Area that fit me", "What fellowships or programs could fund a startup-focused summer?", "Which roles in my pipeline close first, and what's blocking each?", "Who should I reach out to at Figure about operations internships?"];
+async function loadAsk() {
+  if (!W.state.integrations.ai) {
+    $("#ask_threads").innerHTML = "";
+    $("#ask_thread").innerHTML = `<div class="askhero"><h2>Ask Bulldog is off</h2><p>It needs an Anthropic API key (paid per use). Add <code>ANTHROPIC_API_KEY</code> to <code>.env</code> and restart. Everything else in the Workspace works without it.</p></div>`;
+    $("#ask_in").disabled = $("#ask_send").disabled = true; return;
+  }
+  const { chats } = await api("/chats");
+  W.chats = chats;
+  paintAskList();
+  if (W.askThread) openThread(W.askThread); else newAsk();
+}
+function paintAskList() {
+  $("#ask_threads").innerHTML = (W.chats || []).map((c) => `<button class="th ${c.id === W.askThread ? "on" : ""}" onclick="openThread('${c.id}')"><span>${esc(c.title)}</span><i class="small muted" onclick="event.stopPropagation();delThread('${c.id}')">×</i></button>`).join("");
+}
+function newAsk() {
+  W.askThread = null; paintAskList();
+  const i = W.state.integrations;
+  $("#ask_thread").innerHTML = `<div class="askhero"><h2>Ask Bulldog</h2><p>Searches the official job boards and the live web, checks your pipeline and profile, and can save what it finds. It won't send anything or apply for you.</p><div class="starter">${ASK_STARTERS.map((s) => `<button class="btn sm" onclick="$('#ask_in').value=this.textContent;$('#ask_in').focus()">${esc(s)}</button>`).join("")}</div></div>`;
+  $("#ask_note").textContent = `Replies: ${W.state.profile.tier === "pro" ? "Pro · " + i.ai_models.pro : "Basic · " + i.ai_models.basic}. Web searches: ${i.ai_models.search}. Paid per use, with daily limits.`;
+}
+function renderMsg(m) {
+  if (m.role === "user") return `<div class="amsg u">${esc(m.text)}</div>`;
+  const acts = (m.activity || []).map((a) => `<span class="pill ${a.type === "save" || a.type === "contact" ? "g" : "b"}">${esc(a.text)}</span>`).join("");
+  return `<div class="amsg a">${acts ? `<div class="acts">${acts}</div>` : ""}${md(m.text)}<div class="meta">${esc(m.model || "")}</div></div>`;
+}
+async function openThread(id) {
+  W.askThread = id; paintAskList();
+  const { chat } = await api(`/chats/${id}`);
+  $("#ask_thread").innerHTML = chat.display.map(renderMsg).join("");
+  window.scrollTo(0, document.body.scrollHeight);
+}
+async function delThread(id) { if (!confirm("Delete this chat?")) return; await api(`/chats/${id}`, { method: "DELETE" }); if (W.askThread === id) W.askThread = null; loadAsk(); }
+async function sendAskMsg(e) {
+  e?.preventDefault();
+  const text = $("#ask_in").value.trim(); if (!text) return;
+  $("#ask_in").value = ""; $("#ask_send").disabled = true;
+  $(".askhero")?.remove();
+  $("#ask_thread").insertAdjacentHTML("beforeend", renderMsg({ role: "user", text }) + `<div class="amsg a" id="ask_wait"><p class="muted">Thinking… (searches can take up to a minute)</p></div>`);
+  window.scrollTo(0, document.body.scrollHeight);
+  try {
+    const r = await api("/chat", { method: "POST", body: { thread_id: W.askThread, message: text } });
+    $("#ask_wait").outerHTML = renderMsg(r.reply);
+    if (!W.askThread) { W.askThread = r.thread_id; W.chats = (await api("/chats")).chats; paintAskList(); }
+    if ((r.reply.activity || []).some((a) => a.type === "save")) { W.apps = (await api("/apps")).apps; W.opps = (await api("/opps?state=all")).opportunities; }
+  } catch (err) { $("#ask_wait").innerHTML = `<p style="color:#ff9d90">${esc(err.message)}</p>`; }
+  $("#ask_send").disabled = false; $("#ask_in").focus();
+  window.scrollTo(0, document.body.scrollHeight);
+}
+document.addEventListener("keydown", (e) => { if (e.target.id === "ask_in" && e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendAskMsg(); } });
 
 // ---------- discover ----------
 function filtersFromUI() {
@@ -243,7 +322,7 @@ function artifactBlock(app, key, label, a) {
       <button class="btn sm" onclick="saveArtifact('${app.id}','${esc(key)}')">Save edits</button>
       <button class="btn sm primary" onclick="approveArtifact('${app.id}','${esc(key)}')">Approve</button>
       ${key.startsWith("q:") && a.approved_at ? `<button class="btn sm" onclick="saveToLibrary('${app.id}','${esc(key.slice(2))}')">Save to answer library</button>` : ""}
-      ${key !== "resume" && W.state.integrations.ai ? `<button class="btn sm" title="Rewords this draft with ${esc(W.state.integrations.ai_model)} using only your claims. Paid per use (about $0.001)." onclick="aiRewrite('${app.id}','${esc(key)}')">✨ Rewrite with AI</button>` : ""}
+      ${key !== "resume" && W.state.integrations.ai ? `<button class="btn sm" title="Rewords this draft with your ${W.state.profile.tier === "pro" ? "Pro" : "Basic"} model using only your claims and your voice. Paid per use." onclick="aiRewrite('${app.id}','${esc(key)}')">✨ Rewrite with AI</button>` : ""}
       ${key !== "resume" ? `<button class="btn sm" onclick="deleteArtifact('${app.id}','${esc(key)}')">Remove</button>` : `<button class="btn sm" onclick="draft('${app.id}','resume')">Regenerate</button>`}
     </div></div>`;
 }
@@ -453,9 +532,34 @@ function paintProfile() {
   const dis = new Set(p.seed_disabled || []);
   $("#pf_seed").innerHTML = W.state.seed_companies.map((c) => `<label><input type="checkbox" data-seed="${c.ats}:${c.board}" ${dis.has(`${c.ats}:${c.board}`) ? "" : "checked"}/> ${esc(c.name)} <span class="muted">${c.ats}</span></label>`).join("");
   W.boards = [...(p.boards || [])]; paintBoards();
+  paintVoice();
   $("#pf_saved").textContent = p.from_onboarding ? "Prefilled from your onboarding answers. Check them and press Save profile." : $("#pf_saved").textContent;
   paintClaims();
 }
+function paintVoice() {
+  const v = W.state.profile.voice || {};
+  $("#voice_samples").innerHTML = (v.samples || []).map((x) => `<div class="rowitem"><div class="grow"><div class="t"><b>${esc(x.title)}</b></div><div class="s">${esc(x.text.slice(0, 160))}…</div></div><button class="btn sm" onclick="delVoice('${x.id}')">×</button></div>`).join("") || `<p class="muted small">No samples yet. Two to five pieces you're proud of works best: posts, essays, emails.</p>`;
+  $("#voice_guide").value = v.guide || "";
+  $("#voice_an").disabled = !W.state.integrations.ai || !(v.samples || []).length;
+  $("#voice_note").textContent = !W.state.integrations.ai ? "Learning your style needs the AI key; you can still write style notes yourself." : v.guide_at ? `Learned ${fmtDate(v.guide_at)} by ${v.guide_model}` : "";
+}
+async function voiceFile(input) {
+  const f = input.files[0]; if (!f) return;
+  try { $("#voice_text").value = await extractFileText(f); if (!$("#voice_title").value) $("#voice_title").value = f.name.replace(/\.[^.]+$/, ""); toast("Read the file. Check it, then Add sample."); }
+  catch (e) { toast("Couldn't read that file: " + e.message); }
+  input.value = "";
+}
+async function addVoice() {
+  try { const { profile } = await api("/voice/samples", { method: "POST", body: { title: $("#voice_title").value.trim(), text: $("#voice_text").value } }); W.state.profile = profile; $("#voice_text").value = $("#voice_title").value = ""; paintVoice(); toast("Sample added"); }
+  catch (e) { toast(e.message, 5000); }
+}
+async function delVoice(id) { const { profile } = await api(`/voice/samples/${id}`, { method: "DELETE" }); W.state.profile = profile; paintVoice(); }
+async function analyzeVoice() {
+  $("#voice_an").disabled = true; $("#voice_note").textContent = "Reading your samples…";
+  try { const { profile } = await api("/voice/analyze", { method: "POST" }); W.state.profile = profile; paintVoice(); toast("Style learned. AI rewrites will use it."); }
+  catch (e) { toast(e.message, 5000); paintVoice(); }
+}
+async function saveVoiceGuide() { const { profile } = await api("/voice/guide", { method: "PUT", body: { guide: $("#voice_guide").value } }); W.state.profile = profile; paintVoice(); toast("Style notes saved"); }
 function paintBoards() { $("#pf_boards").innerHTML = W.boards.map((b, i) => `<div class="rowitem"><div class="grow small">${esc(b.name)} <span class="muted">${esc(b.ats)}:${esc(b.board)}</span></div><button class="btn sm" onclick="W.boards.splice(${i},1);paintBoards()">×</button></div>`).join(""); }
 async function addBoard() {
   const ats = $("#pf_bats").value, board = $("#pf_bname").value.trim();
@@ -480,6 +584,7 @@ async function saveProfile() {
   body.exclusions = $("#pf_excl").value.split("\n").map((x) => x.trim()).filter(Boolean);
   body.seed_disabled = $$("[data-seed]").filter((x) => !x.checked).map((x) => x.dataset.seed);
   body.boards = W.boards;
+  body.tier = W.state.profile.tier || "basic";
   try {
     const { profile } = await api("/profile", { method: "PUT", body });
     W.state.profile = profile;
@@ -523,7 +628,7 @@ async function importResumeClaims() { try { const r = await api("/claims/import-
 // ---------- data ----------
 function paintData() {
   const i = W.state.integrations;
-  $("#data_integrations").innerHTML = `<div>Job boards (Greenhouse, Lever, Ashby): <b>on · free</b></div><div>Apollo people search: <b>${i.apollo ? "on (your key)" : "off"}</b></div><div>Linq mobile alerts: <b>off</b> (paid provider, not set up)</div><div>Ranking by meaning: <b>local model, free</b> (${esc(i.meaning_model)})</div><div>AI rewrites in this workspace: <b>${i.ai ? `on · ${esc(i.ai_model)} · paid per use, only when you click ✨` : "off (no Anthropic key)"}</b>. Drafts always start from your claims.</div><div>Main chat AI: <b>${i.ai ? "on (your key, paid per use)" : "off"}</b></div>`;
+  $("#data_integrations").innerHTML = `<div>Job boards (Greenhouse, Lever, Ashby): <b>on · free</b></div><div>Apollo people search: <b>${i.apollo ? "on (your key)" : "off"}</b></div><div>Linq mobile alerts: <b>off</b> (paid provider, not set up)</div><div>Ranking by meaning: <b>local model, free</b> (${esc(i.meaning_model)})</div><div>AI rewrites in this workspace: <b>${i.ai ? `on · Basic ${esc(i.ai_models.basic)} / Pro ${esc(i.ai_models.pro)} (you're on ${W.state.profile.tier === "pro" ? "Pro" : "Basic"}) · web search ${esc(i.ai_models.search)} · paid per use` : "off (no Anthropic key)"}</b>. Drafts always start from your claims.</div><div>Main chat AI: <b>${i.ai ? "on (your key, paid per use)" : "off"}</b></div>`;
 }
 async function importJSON(input) {
   const f = input.files[0]; if (!f) return;

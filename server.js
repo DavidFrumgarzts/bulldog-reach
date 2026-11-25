@@ -18,7 +18,10 @@ const Anthropic = require("@anthropic-ai/sdk");
 const API_KEY = process.env.ANTHROPIC_API_KEY || "";
 // Two models: Sonnet for anything that needs live web search, Haiku (much cheaper) for reading and writing.
 const MODEL_SEARCH = process.env.CLAUDE_MODEL_SEARCH || "claude-sonnet-5-5"; // opportunity deck, game plan, list research
-const MODEL_FAST = process.env.CLAUDE_MODEL_FAST || "claude-haiku-5-5"; // resume reading, tailoring, drafts
+const MODEL_FAST = process.env.CLAUDE_MODEL_FAST || "claude-haiku-5-5"; // Basic: resume reading, tailoring, drafts, chat replies
+const MODEL_PRO = process.env.CLAUDE_MODEL_PRO || "claude-sonnet-5-5"; // Pro: the same writing work on the stronger model
+// Basic / Pro only changes the WRITING model. Live web search always runs on MODEL_SEARCH.
+const writingModel = (tier) => (tier === "pro" ? MODEL_PRO : MODEL_FAST);
 const MODEL = MODEL_SEARCH; // shown in logs / config
 const EFFORT = process.env.REACH_EFFORT || "low"; // low | medium | high — higher is more thorough and slower
 // AI features (chat deck, game plan, resume reading, tailoring, list research) call the paid Anthropic API.
@@ -201,13 +204,13 @@ async function claudeJSON(system, user, searchHint) {
 }
 
 // Plain JSON call, no search, on the cheap model (resume parsing / tailoring work only on what the student gave us).
-async function claudePlain(system, user, ms = 120000) {
-  const out = await ask(`${system}\n\nToday is ${today()}. Output the JSON object only.`, user, { ms, model: MODEL_FAST });
+async function claudePlain(system, user, ms = 120000, model = MODEL_FAST) {
+  const out = await ask(`${system}\n\nToday is ${today()}. Output the JSON object only.`, user, { ms, model });
   return parseJSON(out.text);
 }
 // Plain text on the cheap model (Workspace drafts).
-async function claudeText(system, user, ms = 90000) {
-  return (await ask(`${system}\n\nToday is ${today()}.`, user, { ms, model: MODEL_FAST })).text.trim();
+async function claudeText(system, user, model = MODEL_FAST, ms = 90000) {
+  return (await ask(`${system}\n\nToday is ${today()}.`, user, { ms, model })).text.trim();
 }
 
 function planPrompt({ goal, about, profiles, liked }) {
@@ -263,7 +266,9 @@ const LIMITS = {
   detail: +process.env.DAILY_DETAIL_LIMIT || 40, // opportunity research when added to cart
   tailor: +process.env.DAILY_TAILOR_LIMIT || 20,
   parse: +process.env.DAILY_PARSE_LIMIT || 6,
-  draft: +process.env.DAILY_DRAFT_LIMIT || 40, // Workspace AI rewrites (Haiku)
+  draft: +process.env.DAILY_DRAFT_LIMIT || 40, // Workspace AI rewrites and voice analysis
+  chat: +process.env.DAILY_CHAT_LIMIT || 40, // Ask Bulldog messages
+  websearch: +process.env.DAILY_WEBSEARCH_LIMIT || 25, // Ask Bulldog web searches (Sonnet, the costly part)
 };
 const MONTHLY_CAP = +process.env.MONTHLY_CALL_CAP || 3000; // total model calls across all users per month
 const STATUSES = ["todo", "sent", "replied", "meeting", "referred", "no_reply"];
@@ -344,7 +349,12 @@ const store = require("./lib/store")({ AUTH, sb, root: __dirname });
 const linkedin = require("./lib/linkedin");
 const records = require("./lib/records")({ AUTH, sb, root: __dirname });
 require("./lib/semantic").warm(); // free local meaning model; loads in the background
-const bootApi = require("./lib/boot")({ records, store, guard, readBody, send, HttpError, ai: AI ? { write: claudeText, bump, model: MODEL_FAST } : null, AI_OFF });
+// The user's Basic / Pro choice lives on their Workspace profile.
+async function tierOf(uid) { return (await records.get(uid, "profile", "me").catch(() => null))?.tier === "pro" ? "pro" : "basic"; }
+const bootApi = require("./lib/boot")({ records, store, guard, readBody, send, HttpError, AI_OFF,
+  ai: AI ? { write: claudeText, bump, writingModel, models: { basic: MODEL_FAST, pro: MODEL_PRO, search: MODEL_SEARCH },
+    search: (system, user) => ask(`${system}\n\nToday is ${today()}.`, user, { model: MODEL_SEARCH, ms: 150000, tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 5 }] }),
+    client: () => claude } : null });
 const CART_STATUSES = ["saved", "applying", "submitted", "interview", "offer", "dropped"];
 const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || "");
 
@@ -451,7 +461,7 @@ http
     const url = req.url.split("?")[0];
     try {
       if (url === "/api/config" || url === "/api/status") {
-        return send(res, 200, { ai: AI, demo: DEMO, model: MODEL, models: { search: MODEL_SEARCH, fast: MODEL_FAST }, emailCode: process.env.AUTH_EMAIL_CODE === "1", auth: AUTH, domain: DOMAIN, limits: LIMITS, supabaseUrl: AUTH ? SB_URL : null, supabaseAnonKey: AUTH ? SB_ANON : null, linkedin: linkedin.configured });
+        return send(res, 200, { ai: AI, demo: DEMO, model: MODEL, models: { search: MODEL_SEARCH, basic: MODEL_FAST, pro: MODEL_PRO }, emailCode: process.env.AUTH_EMAIL_CODE === "1", auth: AUTH, domain: DOMAIN, limits: LIMITS, supabaseUrl: AUTH ? SB_URL : null, supabaseAnonKey: AUTH ? SB_ANON : null, linkedin: linkedin.configured });
       }
       if (req.method === "POST" && url === "/api/plan") {
         const user = await guard(req);
@@ -618,7 +628,7 @@ http
         if (resumeText.length < 80 && linkedinText.length < 80) return send(res, 400, { error: "We couldn't read enough text from your files. Try a different PDF/DOCX." });
         if (!AI && !DEMO) throw new HttpError(503, AI_OFF);
         await bump(user, "parse");
-        const base = DEMO ? demoResume() : await claudePlain(RESUME_PARSE_SYSTEM, `RESUME TEXT:\n${resumeText || "(none)"}\n\nLINKEDIN PROFILE:\n${linkedinText || "(none)"}`);
+        const base = DEMO ? demoResume() : await claudePlain(RESUME_PARSE_SYSTEM, `RESUME TEXT:\n${resumeText || "(none)"}\n\nLINKEDIN PROFILE:\n${linkedinText || "(none)"}`, 120000, writingModel(await tierOf(user.id)));
         const saved = await store.resumeSave(user.id, { base: normalizeResume(base), source_names: (b.source_names || []).slice(0, 4).map((s) => clip(s, 120)) });
         return send(res, 200, { resume: saved });
       }
@@ -642,7 +652,7 @@ http
           await bump(user, "tailor");
           const existing = await store.tailoredGet(user.id, item.id);
           const current = existing?.resume || r.base;
-          const out = DEMO ? demoTailor(current) : await claudePlain(TAILOR_SYSTEM, `TARGET OPPORTUNITY:\n${JSON.stringify(item.opp)}\n\nWHAT THEY LOOK FOR:\n${JSON.stringify({ summary: item.detail?.summary, eligibility: item.detail?.eligibility, keywords: item.detail?.keywords })}\n\nRESUME (JSON):\n${JSON.stringify(current)}`);
+          const out = DEMO ? demoTailor(current) : await claudePlain(TAILOR_SYSTEM, `TARGET OPPORTUNITY:\n${JSON.stringify(item.opp)}\n\nWHAT THEY LOOK FOR:\n${JSON.stringify({ summary: item.detail?.summary, eligibility: item.detail?.eligibility, keywords: item.detail?.keywords })}\n\nRESUME (JSON):\n${JSON.stringify(current)}`, 120000, writingModel(await tierOf(user.id)));
           // Flag words a suggestion introduces that appear nowhere in the student's resume, so they can check for embellishment.
           const vocab = new Set(JSON.stringify(current).toLowerCase().match(/[a-z][a-z+#.-]{2,}/g) || []);
           const STOP = new Set("the and for with from into that this your their using used use across based while within via per who what when where which over under onto than then also more most such each both".split(" "));
@@ -676,4 +686,4 @@ http
     res.writeHead(200, { "Content-Type": types[path.extname(file)] || "application/octet-stream", "Cache-Control": "no-cache" });
     fs.createReadStream(file).pipe(res);
   })
-  .listen(PORT, () => console.log(`Bulldog Reach on http://localhost:${PORT}  (${AI ? `AI on · search: ${MODEL_SEARCH} · reading/writing: ${MODEL_FAST}` : DEMO ? "DEMO_MODE: fake sample data" : "AI off — no ANTHROPIC_API_KEY (workspace is free)"} · ${AUTH ? "Yale login ON" : "open mode, no login"})`));
+  .listen(PORT, () => console.log(`Bulldog Reach on http://localhost:${PORT}  (${AI ? `AI on · search: ${MODEL_SEARCH} · writing: Basic ${MODEL_FAST} / Pro ${MODEL_PRO}` : DEMO ? "DEMO_MODE: fake sample data" : "AI off — no ANTHROPIC_API_KEY (workspace is free)"} · ${AUTH ? "Yale login ON" : "open mode, no login"})`));

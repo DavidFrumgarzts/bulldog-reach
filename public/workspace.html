@@ -14,6 +14,7 @@
   <a href="/app" class="logo" title="Back to chat">B_</a>
   <span class="wsbrand">Boot Outreach <small>workspace</small></span>
   <nav class="wstabs" role="tablist">
+    <button data-tab="ask" role="tab">Ask</button>
     <button data-tab="discover" role="tab">Discover</button>
     <button data-tab="pipeline" role="tab">Pipeline</button>
     <button data-tab="contacts" role="tab">Contacts</button>
@@ -21,10 +22,29 @@
     <button data-tab="profile" role="tab">Profile</button>
     <button data-tab="data" role="tab">Your data</button>
   </nav>
+  <div id="tier" class="tier" title="Which model writes your drafts and chat replies. Web search always uses Sonnet."></div>
   <span id="who" class="who"></span>
 </header>
 
 <main class="wsmain">
+  <!-- ASK BULLDOG -->
+  <section id="tab-ask" class="tab" hidden>
+    <div class="askgrid">
+      <aside class="asklist">
+        <button class="btn primary" style="width:100%" onclick="newAsk()">+ New chat</button>
+        <div id="ask_threads"></div>
+      </aside>
+      <div class="askmain">
+        <div id="ask_thread" class="askthread"></div>
+        <form class="askbox" onsubmit="sendAskMsg(event)">
+          <textarea id="ask_in" class="inp" rows="2" placeholder="Ask anything: “find robotics ops internships in NYC that take sophomores”, “who runs the program at Figure?”, “which of my saved roles closes first?”"></textarea>
+          <button class="btn primary" id="ask_send">Send</button>
+        </form>
+        <p class="muted small" id="ask_note"></p>
+      </div>
+    </div>
+  </section>
+
   <!-- DISCOVER -->
   <section id="tab-discover" class="tab" hidden>
     <div class="bar">
@@ -134,6 +154,16 @@
         <div class="lbl">Ranking priorities (0–3)</div><div id="pf_prio" class="prio"></div>
       </div>
     </div>
+    <div class="panel form" id="pf_voice">
+      <h3>Your voice <small class="muted">— a few pieces of your own writing, so AI drafts sound like you (style only; facts still come from your claims)</small></h3>
+      <div id="voice_samples"></div>
+      <div class="row"><input id="voice_title" class="inp" placeholder="Title (e.g. LinkedIn post on our hackathon)" /><label class="drop" style="padding:8px 12px"><input type="file" accept=".pdf,.docx,.txt,.md" onchange="voiceFile(this)" /> Upload a file</label></div>
+      <textarea id="voice_text" class="inp" rows="4" placeholder="…or paste a post, essay or email you're proud of (a few paragraphs works best)"></textarea>
+      <div class="bar"><button class="btn" onclick="addVoice()">Add sample</button><button class="btn" id="voice_an" onclick="analyzeVoice()">Learn my style</button><span class="muted small" id="voice_note"></span></div>
+      <div class="lbl">Style notes used in drafts <small class="muted">(edit freely)</small></div>
+      <textarea id="voice_guide" class="inp" rows="3" placeholder="Written by “Learn my style”, or write your own: e.g. short sentences, warm but direct, no exclamation marks."></textarea>
+      <div><button class="btn sm" onclick="saveVoiceGuide()">Save style notes</button></div>
+    </div>
     <div class="panel form" id="pf_elig">
       <h3>Eligibility facts <small class="muted">— saved only when you tick “I confirm”. The app never guesses these.</small></h3>
       <div id="pf_eligrows"></div>
@@ -192,6 +222,7 @@
 
 <div id="drawer" class="drawer" hidden><div class="drawerin"><button class="x" onclick="closeDrawer()" aria-label="Close">×</button><div id="drawerbody"></div></div></div>
 <div id="toast" class="toast" hidden></div>
+<script src="/extract.js"></script>
 <script src="/workspace.js"></script>
 </body>
 </html>

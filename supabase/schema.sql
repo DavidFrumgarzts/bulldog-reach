@@ -116,7 +116,7 @@ revoke all on public.profiles from anon, authenticated;
 -- applications, contacts, outreach, answers). `data` holds the record; the server enforces shape.
 create table if not exists public.boot_records (
   user_id     uuid not null references auth.users on delete cascade,
-  kind        text not null check (kind in ('profile','claim','search','run','opp','app','contact','outreach','answer')),
+  kind        text not null check (kind in ('profile','claim','search','run','opp','app','contact','outreach','answer','chat')),
   id          text not null,
   data        jsonb not null,
   created_at  timestamptz not null default now(),
@@ -127,3 +127,7 @@ create index if not exists boot_records_user_kind on public.boot_records (user_i
 alter table public.boot_records enable row level security;
 grant select, insert, update, delete on public.boot_records to service_role;
 revoke all on public.boot_records from anon, authenticated;
+
+-- v4.1: allow Ask Bulldog chat threads in boot_records (run this if you created the table before chat existed)
+alter table public.boot_records drop constraint if exists boot_records_kind_check;
+alter table public.boot_records add constraint boot_records_kind_check check (kind in ('profile','claim','search','run','opp','app','contact','outreach','answer','chat'));
