@@ -18,8 +18,12 @@ const Anthropic = require("@anthropic-ai/sdk");
 const API_KEY = process.env.ANTHROPIC_API_KEY || "";
 const MODEL = process.env.CLAUDE_MODEL || "claude-opus-5-5";
 const EFFORT = process.env.REACH_EFFORT || "low"; // low | medium | high — higher is more thorough and slower
-const DEMO = !API_KEY || process.env.DEMO_MODE === "1";
-const claude = DEMO ? null : new Anthropic({ apiKey: API_KEY, maxRetries: 1 });
+// AI features (chat deck, game plan, resume reading, tailoring, list research) call the paid Anthropic API.
+// Without a key they are OFF and say so. Sample data is shown only if you opt in with DEMO_MODE=1, and it is fake.
+const AI = !!API_KEY && process.env.DEMO_MODE !== "1";
+const DEMO = !AI && process.env.DEMO_MODE === "1";
+const AI_OFF = "AI features are off: they need an Anthropic API key, which is paid per use. Add ANTHROPIC_API_KEY to .env to turn them on. The Workspace (/workspace) works without it.";
+const claude = AI ? new Anthropic({ apiKey: API_KEY, maxRetries: 1 }) : null;
 // If a model declines a request, the API can re-run it on a fallback model in the same call (these models only).
 const FALLBACKS = /^claude-(fable-5-[12]|opus-5|sonnet-5-5)/.test(MODEL);
 const today = () => new Date().toISOString().slice(0, 10);
@@ -331,6 +335,7 @@ const { ics } = require("./lib/ics");
 const store = require("./lib/store")({ AUTH, sb, root: __dirname });
 const linkedin = require("./lib/linkedin");
 const records = require("./lib/records")({ AUTH, sb, root: __dirname });
+require("./lib/semantic").warm(); // free local meaning model; loads in the background
 const bootApi = require("./lib/boot")({ records, store, guard, readBody, send, HttpError });
 const CART_STATUSES = ["saved", "applying", "submitted", "interview", "offer", "dropped"];
 const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || "");
@@ -361,6 +366,7 @@ async function studentBrief(uid) {
 
 // Research one cart item (events, checklist, messages) in the background; never throws.
 async function enrich(user, item) {
+  if (!AI && !DEMO) return store.cartUpdate(user.id, item.id, { detail: { error: AI_OFF } }).catch(() => {});
   try {
     await bump(user, "detail");
     const detail = DEMO ? demoDetail(item.opp) : await claudeJSON(DETAIL_SYSTEM, `OPPORTUNITY:\n${JSON.stringify(item.opp)}\n\nSTUDENT (write every message as this student, using these facts; never leave a bracketed placeholder):\n${(await studentBrief(user.id)) || "A Yale undergraduate."}`, "Use web_search (official page, staff and people pages, ocs.yale.edu, events.yale.edu) to find real deadlines, info sessions, and the named people who run it.");
@@ -437,10 +443,11 @@ http
     const url = req.url.split("?")[0];
     try {
       if (url === "/api/config" || url === "/api/status") {
-        return send(res, 200, { demo: DEMO, model: MODEL, emailCode: process.env.AUTH_EMAIL_CODE === "1", auth: AUTH, domain: DOMAIN, limits: LIMITS, supabaseUrl: AUTH ? SB_URL : null, supabaseAnonKey: AUTH ? SB_ANON : null, linkedin: linkedin.configured });
+        return send(res, 200, { ai: AI, demo: DEMO, model: MODEL, emailCode: process.env.AUTH_EMAIL_CODE === "1", auth: AUTH, domain: DOMAIN, limits: LIMITS, supabaseUrl: AUTH ? SB_URL : null, supabaseAnonKey: AUTH ? SB_ANON : null, linkedin: linkedin.configured });
       }
       if (req.method === "POST" && url === "/api/plan") {
         const user = await guard(req);
+        if (!AI && !DEMO) throw new HttpError(503, AI_OFF);
         const b = await readBody(req);
         if (!b.goal) return send(res, 400, { error: "Tell us your goal first." });
         const input = { goal: clip(b.goal, 300), about: clip(b.about, 1500), profiles: clip(b.profiles, 12000), liked: (Array.isArray(b.liked) ? b.liked : []).slice(0, 12) };
@@ -456,6 +463,7 @@ http
       }
       if (req.method === "POST" && url === "/api/opportunities") {
         const user = await guard(req);
+        if (!AI && !DEMO) throw new HttpError(503, AI_OFF);
         const b = await readBody(req);
         if (!b.goal) return send(res, 400, { error: "Tell us your goal first." });
         const usage = await bump(user, "deck");
@@ -600,6 +608,7 @@ http
         const b = await readBody(req);
         const resumeText = clip(b.resume_text, 30000), linkedinText = clip(b.linkedin_text, 30000);
         if (resumeText.length < 80 && linkedinText.length < 80) return send(res, 400, { error: "We couldn't read enough text from your files. Try a different PDF/DOCX." });
+        if (!AI && !DEMO) throw new HttpError(503, AI_OFF);
         await bump(user, "parse");
         const base = DEMO ? demoResume() : await claudePlain(RESUME_PARSE_SYSTEM, `RESUME TEXT:\n${resumeText || "(none)"}\n\nLINKEDIN PROFILE:\n${linkedinText || "(none)"}`);
         const saved = await store.resumeSave(user.id, { base: normalizeResume(base), source_names: (b.source_names || []).slice(0, 4).map((s) => clip(s, 120)) });
@@ -621,6 +630,7 @@ http
           // Generate SUGGESTIONS only. The resume itself is unchanged until the student accepts edits.
           const r = await store.resumeGet(user.id);
           if (!r?.base) return send(res, 400, { error: "Upload your resume first." });
+          if (!AI && !DEMO) throw new HttpError(503, AI_OFF);
           await bump(user, "tailor");
           const existing = await store.tailoredGet(user.id, item.id);
           const current = existing?.resume || r.base;
@@ -658,4 +668,4 @@ http
     res.writeHead(200, { "Content-Type": types[path.extname(file)] || "application/octet-stream", "Cache-Control": "no-cache" });
     fs.createReadStream(file).pipe(res);
   })
-  .listen(PORT, () => console.log(`Bulldog Reach on http://localhost:${PORT}  (${DEMO ? "DEMO mode — add ANTHROPIC_API_KEY to .env" : "model " + MODEL} · ${AUTH ? "Yale login ON" : "open mode, no login"})`));
+  .listen(PORT, () => console.log(`Bulldog Reach on http://localhost:${PORT}  (${AI ? "AI on · model " + MODEL : DEMO ? "DEMO_MODE: fake sample data" : "AI off — no ANTHROPIC_API_KEY (workspace is free)"} · ${AUTH ? "Yale login ON" : "open mode, no login"})`));

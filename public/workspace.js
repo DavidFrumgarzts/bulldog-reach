@@ -89,7 +89,7 @@ async function runSearch() {
     const o = await api("/opps?state=all"); W.opps = o.opportunities;
     $("#d_view").value = "new";
     W.lastRun = new Set(r.opportunities.map((x) => x.id));
-    $("#d_meta").textContent = `${r.opportunities.length} roles from ${r.sources.length} official boards · checked ${new Date().toLocaleTimeString()} · ranked by your priorities. Dismissed roles stay hidden.`;
+    $("#d_meta").textContent = `${r.opportunities.length} roles from ${r.sources.length} official boards · checked ${new Date().toLocaleTimeString()} · ranked by ${r.method === "meaning" ? "meaning (local model)" : r.method}${r.filtered_out ? ` · ${r.filtered_out} hidden as far from your interests` : ""}. Dismissed roles stay hidden.`;
     paintDiscover();
   } catch (e) { toast(e.message); }
   btn.disabled = false; btn.textContent = "Search official job boards";
@@ -162,9 +162,9 @@ function fitBlock(o) {
   const e = f.eligibility || {}, x = f.experience || {}, i = f.interest || {};
   const claim = (id) => W.state.claims.find((c) => c.id === id);
   return `<h3>Fit — three separate questions</h3>
-    <div class="note ${scoreCls(i.score) === "g" ? "g" : ""}"><b>Interest fit ${i.score ?? "–"}</b>: ${esc(i.reasons?.join(" · ") || "—")}${i.missing?.length ? `<br><span class="muted">${esc(i.missing.join(" "))}</span>` : ""}</div>
-    <div class="note"><b>Experience fit ${x.score ?? "?"}</b>${x.missing?.length ? `: ${esc(x.missing.join(" "))}` : ""}
-      ${(x.matched || []).map((m) => `<div class="small">✓ ${esc(m.requirement)} <span class="muted">← ${m.claims.map((id) => esc((claim(id)?.preferred_wording || claim(id)?.text || id).slice(0, 70))).join("; ")}</span></div>`).join("")}
+    <div class="note ${scoreCls(i.score) === "g" ? "g" : ""}"><b>Interest fit ${i.score ?? "–"}</b> <span class="muted small">(${esc(i.method || "")})</span>: ${esc(i.reasons?.join(" · ") || "—")}${i.missing?.length ? `<br><span class="muted">${esc(i.missing.join(" "))}</span>` : ""}</div>
+    <div class="note"><b>Experience fit ${x.score ?? "?"}</b> <span class="muted small">(${esc(x.method || "")})</span>${x.missing?.length ? `: ${esc(x.missing.join(" "))}` : ""}
+      ${(x.matched || []).map((m) => `<div class="small">✓ ${esc(m.requirement)} <span class="muted">${m.similarity ? `(${m.similarity}) ` : ""}← ${m.claims.map((id) => esc((claim(id)?.preferred_wording || claim(id)?.text || id).slice(0, 70))).join("; ")}</span></div>`).join("")}
       ${(x.unmatched || []).map((r) => `<div class="small muted">· ${esc(r)} <i>(no confirmed claim supports this)</i></div>`).join("")}
       ${(x.flags || []).map((fl) => `<div class="small" style="color:#ff9d90">⚠ ${esc(fl)}</div>`).join("")}</div>
     <div class="note ${eligCls(e.state) === "r" ? "r" : eligCls(e.state) === "g" ? "g" : ""}"><b>Eligibility: ${esc(e.label || "?")}</b> — ${esc(e.note || "")}
@@ -435,6 +435,7 @@ function paintProfile() {
   const dis = new Set(p.seed_disabled || []);
   $("#pf_seed").innerHTML = W.state.seed_companies.map((c) => `<label><input type="checkbox" data-seed="${c.ats}:${c.board}" ${dis.has(`${c.ats}:${c.board}`) ? "" : "checked"}/> ${esc(c.name)} <span class="muted">${c.ats}</span></label>`).join("");
   W.boards = [...(p.boards || [])]; paintBoards();
+  $("#pf_saved").textContent = p.from_onboarding ? "Prefilled from your onboarding answers. Check them and press Save profile." : $("#pf_saved").textContent;
   paintClaims();
 }
 function paintBoards() { $("#pf_boards").innerHTML = W.boards.map((b, i) => `<div class="rowitem"><div class="grow small">${esc(b.name)} <span class="muted">${esc(b.ats)}:${esc(b.board)}</span></div><button class="btn sm" onclick="W.boards.splice(${i},1);paintBoards()">×</button></div>`).join(""); }
@@ -504,7 +505,7 @@ async function importResumeClaims() { try { const r = await api("/claims/import-
 // ---------- data ----------
 function paintData() {
   const i = W.state.integrations;
-  $("#data_integrations").innerHTML = `<div>Job boards (Greenhouse, Lever, Ashby): <b>on · free</b></div><div>Apollo people search: <b>${i.apollo ? "on (your key)" : "off"}</b></div><div>Linq mobile alerts: <b>off</b> (paid provider, not set up)</div><div>AI drafting in this workspace: <b>off</b> (drafts come from your claims, at no cost)</div>`;
+  $("#data_integrations").innerHTML = `<div>Job boards (Greenhouse, Lever, Ashby): <b>on · free</b></div><div>Apollo people search: <b>${i.apollo ? "on (your key)" : "off"}</b></div><div>Linq mobile alerts: <b>off</b> (paid provider, not set up)</div><div>Ranking by meaning: <b>local model, free</b> (${esc(i.meaning_model)})</div><div>Anthropic (paid) in this workspace: <b>never used</b>. Drafts come from your claims.</div><div>Main chat AI: <b>${i.ai ? "on (your key, paid per use)" : "off"}</b></div>`;
 }
 async function importJSON(input) {
   const f = input.files[0]; if (!f) return;

@@ -79,7 +79,8 @@
 <script>
 fetch("/api/config").then((r) => r.json()).then((c) => {
   const el = document.getElementById("status");
-  if (c.demo) { el.hidden = false; el.innerHTML = "<i></i>demo mode"; }
+  if (c.demo) { el.hidden = false; el.innerHTML = "<i></i>sample data (fake)"; }
+  else if (!c.ai) { el.hidden = false; el.innerHTML = "<i></i>AI off · workspace is free"; el.title = "AI chat needs a paid Anthropic API key"; }
 });
 </script>
 </body>

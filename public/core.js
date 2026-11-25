@@ -15,8 +15,9 @@ const token = () => AUTH.session?.access_token;
 async function boot() {
   const cfg = await fetch("/api/config").then((r) => r.json());
   const el = $("#status");
-  el.hidden = !cfg.demo; el.innerHTML = "<i></i>demo mode";
-  if (!cfg.demo) el.classList.add("live");
+  AUTH.ai = !!cfg.ai;
+  el.hidden = cfg.ai; el.innerHTML = cfg.demo ? "<i></i>sample data (fake)" : "<i></i>AI off";
+  if (!el.hidden) el.title = cfg.demo ? "DEMO_MODE=1: everything the AI would return is made up" : "AI chat needs a paid Anthropic API key. The Workspace is free.";
   AUTH.on = cfg.auth; AUTH.emailCode = !!cfg.emailCode; AUTH.domain = cfg.domain; AUTH.limits = cfg.limits || {};
   if (!AUTH.on) return paintAuth();
   const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");

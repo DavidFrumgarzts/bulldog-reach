@@ -33,11 +33,11 @@
     </div>
     <div class="filters">
       <label>Locations <input id="d_loc" class="inp" placeholder="NYC, Bay Area" /></label>
-      <label>Keywords in title <input id="d_kw" class="inp" placeholder="optional: product, operations" /></label>
+      <label>Title must contain <input id="d_kw" class="inp" placeholder="optional, exact words" /></label>
       <label>Level <select id="d_level" class="inp"><option value="internship">Internships</option><option value="early">Internships + early career</option><option value="any">Any</option></select></label>
       <label>Term <input id="d_term" class="inp" placeholder="Summer 2027" style="width:130px" /></label>
       <label class="chk"><input type="checkbox" id="d_remote" checked /> Include remote</label>
-      <label class="chk"><input type="checkbox" id="d_fam" /> Only my role families</label>
+      <label class="chk" title="Hides roles whose meaning is far from your goal and role families"><input type="checkbox" id="d_fam" /> Only roles that match my interests</label>
     </div>
     <div class="bar">
       <button class="btn primary" id="d_run" onclick="runSearch()">Search official job boards</button>
@@ -46,7 +46,7 @@
       <span class="grow"></span>
       <select id="d_view" class="inp" onchange="paintDiscover()"><option value="new">New</option><option value="saved">Saved</option><option value="dismissed">Dismissed</option><option value="all">All</option></select>
     </div>
-    <p class="muted small" id="d_meta">Searches public Greenhouse, Lever and Ashby boards for the companies in Profile → Companies. Free, no keys, official postings only.</p>
+    <p class="muted small" id="d_meta">Searches public Greenhouse, Lever and Ashby boards for the companies in Profile → Companies, then ranks every role by <b>meaning</b> against your goal, your search and your role families, using a small AI model that runs on this computer. Free, no keys, official postings only.</p>
     <div id="d_sources" class="sources"></div>
     <div id="d_list" class="cards"></div>
   </section>

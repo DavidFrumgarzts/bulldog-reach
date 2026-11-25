@@ -57,7 +57,7 @@ A free, evidence-first job-search workspace built from [the Boot Outreach PRD](d
 - **Contacts & outreach:** import your LinkedIn **Connections.csv** (LinkedIn's own data export), or add people by hand. Email provenance is labeled (verified / from export / you provided / guessed). Drafts must be approved word for word before you can log them as sent. Nothing is sent by the app.
 - **Answer library, CSV export, calendar (.ics) of firm dates only, JSON export/import, delete-all.**
 
-It costs nothing to run: no AI calls and no paid APIs. Optional integrations are listed in [docs/COSTS.md](docs/COSTS.md). A starter profile drawn from the PRD is in [docs/seed-alwis.json](docs/seed-alwis.json) (Workspace → Your data → Import). Every claim in it starts as *unreviewed*.
+It costs nothing to run. Roles are ranked by **meaning**, not keywords, using a small sentence-embedding model (all-MiniLM-L6-v2) that runs on your machine through transformers.js. It downloads once (~23 MB) and needs no key. No paid APIs. Optional integrations are listed in [docs/COSTS.md](docs/COSTS.md). A starter profile drawn from the PRD is in [docs/seed-alwis.json](docs/seed-alwis.json) (Workspace → Your data → Import). Every claim in it starts as *unreviewed*.
 
 ## Why
 
@@ -70,7 +70,7 @@ Yale gives you the network, but nothing helps you use it. LinkedIn tells you who
 - `POST /api/plan`: goal + your picks (+ optional LinkedIn profiles you paste in) → north star, steps, ranked people, messages, and follow-up timing.
 - If live search fails, the server falls back to a plain Claude call. If the whole request fails, the page shows your last good plan instead.
 - Deadlines that have already passed are flagged and kept off your calendar.
-- One dependency (the Anthropic SDK): plain Node `http` and one HTML file.
+- Two dependencies: the Anthropic SDK (paid AI chat, optional) and transformers.js (a free local model the Workspace uses to rank by meaning). Plain Node `http`, no framework.
 
 ## Run it
 
@@ -80,7 +80,7 @@ cp .env.example .env    # add your ANTHROPIC_API_KEY from platform.claude.com
 node server.js          # → http://localhost:3000
 ```
 
-Without a key, the app runs in **demo mode** with sample data.
+Without a key, the AI chat is **off** and says so. Nothing is faked. The Workspace (`/workspace`) is fully usable without a key. `DEMO_MODE=1` shows made-up sample data, for UI work only.
 
 ## Notes
 

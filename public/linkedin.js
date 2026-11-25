@@ -17,6 +17,7 @@ function paintLinkedIn() {
     html = `<button class="libtn" id="li_btn" onclick="connectLinkedIn(this)">${LI_ICON}${s.pending ? "Finish connecting LinkedIn" : "Connect LinkedIn"}</button>`;
   }
   slots.forEach((el) => (el.innerHTML = html));
+  document.querySelectorAll(".lior").forEach((el) => (el.hidden = !(s && s.configured !== false)));
 }
 
 async function loadLinkedIn() {

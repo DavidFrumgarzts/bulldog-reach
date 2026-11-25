@@ -32,6 +32,7 @@ function showOnboarding(step) {
   $("#dots").innerHTML = vs.map((_, j) => `<i class="${j <= i ? "on" : ""}"></i>`).join("");
   document.querySelectorAll(".ostep .k").forEach((k) => { const st = k.closest(".ostep").dataset.step; const n = vs.indexOf(st); if (st !== "email" && st !== "goal") k.textContent = `Step ${n + 1} of ${vs.length}`; });
   if (step === "about") { prefillChips(); paintSummary(); }
+  if (step === "resume" && !AUTH.ai) $('.ostep[data-step="resume"] .op').textContent = "AI reading is off (it needs a paid key), so we save each line of your file to your Workspace as an entry for you to review. Nothing is rewritten.";
   if (step === "goal") { paintSuggestions(); $("#o_goal").value ||= APP.profile?.summer_goal || ""; $("#o_people").value ||= APP.profile?.people || ""; setTimeout(() => $("#o_goal").focus(), 50); }
   window.scrollTo(0, 0);
 }
@@ -48,6 +49,7 @@ async function parseInBackground() {
   const rf = $("#o_rfile").files[0], lf = $("#o_lfile").files[0];
   const key = [rf, lf].map((f) => (f ? f.name + ":" + f.size : "")).join("|");
   if ((!rf && !lf) || RS.parsing || RS.parsedKey === key) return RS.parsing;
+  if (!AUTH.ai) return importWithoutAI(rf, lf, key);
   $("#o_rerr").textContent = ""; $("#o_rnote").textContent = rf && lf ? "Reading your resume and LinkedIn in the background…" : rf ? "Reading your resume in the background…" : "Reading your LinkedIn in the background…";
   RS.parsing = (async () => {
     try {
@@ -56,6 +58,26 @@ async function parseInBackground() {
       RS.resume = resume; RS.parsedKey = key; paintOnboarding(); paintSummary();
       $("#o_rnote").textContent = `✓ Read: ${resume.base.experience.length} experiences, ${resume.base.education.length} schools`;
     } catch (e) { $("#o_rnote").textContent = ""; $("#o_rerr").textContent = "Couldn’t read your files: " + e.message; }
+    finally { RS.parsing = null; paintSummary(); }
+  })();
+  paintSummary();
+  return RS.parsing;
+}
+// AI off: read the files in the browser and save each line to the Workspace as an unreviewed claim. Nothing is rewritten or invented.
+function importWithoutAI(rf, lf, key) {
+  $("#o_rerr").textContent = ""; $("#o_rnote").textContent = "Saving your file's text to your Workspace (no AI)…";
+  RS.parsing = (async () => {
+    try {
+      let n = 0;
+      for (const f of [rf, lf].filter(Boolean)) {
+        const text = await extractText(f);
+        const r = await fetch("/api/boot/claims/import-text", { method: "POST", headers: { "Content-Type": "application/json", ...(token() ? { Authorization: "Bearer " + token() } : {}) }, body: JSON.stringify({ text, source_name: f.name }) }).then((x) => x.json().then((d) => { if (!x.ok) throw new Error(d.error || "Import failed"); return d; }));
+        n += r.imported;
+      }
+      RS.parsedKey = key;
+      RS.importNote = `Saved ${n} line${n === 1 ? "" : "s"} from your file${rf && lf ? "s" : ""} to your Workspace as unreviewed entries. AI reading is off, so nothing was rewritten. Review them in Workspace → Profile → Claims.`;
+      $("#o_rnote").textContent = `✓ Saved ${n} line${n === 1 ? "" : "s"} to Workspace → Profile → Claims as “unreviewed”. AI resume reading is off (it needs a paid key), so review and confirm them there.`;
+    } catch (e) { $("#o_rnote").textContent = ""; $("#o_rerr").textContent = "Couldn’t read your files: " + e.message; RS.importNote = "Couldn’t read your files: " + e.message; }
     finally { RS.parsing = null; paintSummary(); }
   })();
   paintSummary();
@@ -77,7 +99,7 @@ function afterResume() {
 
 // "About you" opens with what the resume and LinkedIn link already told us, as one short paragraph.
 function paintSummary() {
-  const about = RS.resume?.base?.about;
+  const about = RS.resume?.base?.about || (!AUTH.ai && RS.importNote);
   $("#o_sum").hidden = !about && !RS.parsing;
   if (RS.parsing) $("#o_sum").innerHTML = `<div class="ol">What we know so far</div><p class="loading" style="padding:0;font-size:16px"><i></i>Putting your profile together…</p>`;
   else if (about) $("#o_sum").innerHTML = `<div class="ol">What we know so far</div><p>${esc(about)}</p>`;
@@ -135,7 +157,7 @@ async function finishOnboarding() {
   setAbout();
   showShell();
   newChat();
-  sendAsk(goal);
+  if (AUTH.ai) sendAsk(goal);
 }
 function editProfile() { APP.answers = {}; showOnboarding("about"); }
 
@@ -175,7 +197,11 @@ function newChat() {
     <p>Openings matched to ${p.year ? `a Yale ${esc(p.year.toLowerCase())}` : "you"}${p.fields?.length ? ` in ${esc(p.fields.slice(0, 2).join(" and "))}` : ""}, with deadlines synced to your calendar.</p>
     <div class="starter">${starters.map(([t, s]) => `<button data-v="${esc(t)}" onclick="sendAsk(this.dataset.v)">${esc(t)}<small>${esc(s)}</small></button>`).join("")}</div>
   </div>`;
+  if (!AUTH.ai) $("#thread .empty-hero p").insertAdjacentHTML("afterend", aiOffNote());
   $("#ask").value = ""; $("#ask").focus();
+}
+function aiOffNote() {
+  return `<div class="aioff"><b>AI chat is off.</b> Searching and planning here call the Anthropic API, which is paid per use, and no key is set. Everything you need is in the free Workspace: official job boards, evidence, fit, applications and outreach.<div><a class="cta" href="/workspace#discover" style="display:inline-flex;width:auto;height:48px;padding:0 22px;margin-top:12px;text-decoration:none;align-items:center">Open Workspace →</a></div></div>`;
 }
 function addUser(text) {
   $("#thread .empty-hero")?.remove();
@@ -191,6 +217,7 @@ function addAssistant(html) {
 function ask(e) { e.preventDefault(); const t = $("#ask").value.trim(); if (t) sendAsk(t); }
 async function sendAsk(text) {
   $("#ask").value = ""; autoGrow();
+  if (!AUTH.ai) { addUser(text); addAssistant(aiOffNote()); return; }
   // A previous deck in this thread collapses to a one-line summary.
   const prev = $("#deck").parentElement;
   if (prev && prev.id !== "park") prev.insertAdjacentHTML("beforeend", `<p class="why">Showed ${S.seen.length} opportunities · ${S.liked.length} saved to your list.</p>`);
@@ -238,6 +265,7 @@ renderCart = function () { _renderCart2(); $("#listempty").hidden = CART.items.l
 // Resume: if none yet, jump to the upload step and come back.
 const _openResume = openResume;
 openResume = function () {
+  if (!AUTH.ai && !RS.resume?.base) { location.href = "/workspace#profile"; return; } // AI resume editing is off; claims live in the Workspace
   if (!RS.resume?.base) { APP.returnToApp = true; return showOnboarding("resume"); }
   _openResume();
 };

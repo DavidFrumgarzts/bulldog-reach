@@ -11,6 +11,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^1.10.0"
+    "@anthropic-ai/sdk": "^1.10.0",
+    "@huggingface/transformers": "^4.3.2"
   }
 }

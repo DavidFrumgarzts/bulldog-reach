@@ -7,7 +7,8 @@ The Boot Outreach workspace (`/workspace`) is built to run at **$0**. Nothing in
 | Piece | Why it's free |
 |---|---|
 | Job discovery | Public Greenhouse, Lever and Ashby job-board feeds. No key, no account, official employer postings. Cached 30 minutes per board to stay polite. |
-| Fit, eligibility labels, evidence | Computed on your machine from the posting text. No AI model. |
+| Ranking by meaning | A small local embedding model (all-MiniLM-L6-v2 via transformers.js) runs on your machine. It downloads once from Hugging Face (~23 MB) and needs no account or key. If it can't load, ranking falls back to keywords and says so. |
+| Eligibility labels, evidence | Computed on your machine from the posting text. |
 | Resume / cover letter / answer / outreach drafts | Assembled from your own claims ledger. No AI model. |
 | LinkedIn connections | LinkedIn's own **Get a copy of your data** export (`Connections.csv`). Your own data, free, within LinkedIn's terms. |
 | Calendar, CSV, JSON export | Generated locally. |
@@ -20,7 +21,7 @@ None of these are turned on. Each needs an action from you first.
 
 | Item | Cost today | What you'd do | Notes |
 |---|---|---|---|
-| **Anthropic API** (main chat app: deck, plan, resume parse/tailor) | Pay per use | Already optional: leave `ANTHROPIC_API_KEY` empty and the main app runs in demo mode. The workspace never uses it. | If you add a key, set a monthly spend limit in the Anthropic console first. |
+| **Anthropic API** (main chat app: opportunity deck, game plan, AI resume reading, tailoring, list research) | Pay per use | Off unless you add `ANTHROPIC_API_KEY`. Without it these features are blocked with a clear message; no fake data. Onboarding still works: your resume's lines are saved to the Workspace without AI. The Workspace never uses it. | If you add a key, set a monthly spend limit in the Anthropic console first. |
 | **Apollo.io** people search | Free plan exists (no time limit). The People API Search endpoint costs 0 credits but returns no emails. Enrichment (emails) costs credits. | Sign up yourself with a work email, create an API key, put it in `.env` as `APOLLO_API_KEY`. The app only calls the 0-credit search endpoint. | Apollo's terms: internal use only, no reselling, no use "with LinkedIn automations". Results are labeled unverified. |
 | **Hunter.io** (email finder) | Free plan: 50 credits/month | Not integrated. If you want it, sign up and we'd add it the same way as Apollo. | 1 credit per email found. |
 | **People Data Labs** | Free: 100 credits/month, but contact data is hidden on free | Not integrated; not useful for free. | |
