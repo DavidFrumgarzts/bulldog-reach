@@ -110,3 +110,20 @@ create table if not exists public.profiles (
 alter table public.profiles enable row level security;
 grant select, insert, update, delete on public.profiles to service_role;
 revoke all on public.profiles from anon, authenticated;
+
+-- ---------- v4: Boot Outreach workspace ----------
+-- One table for workspace records (profile, claims, saved searches, search runs, opportunities,
+-- applications, contacts, outreach, answers). `data` holds the record; the server enforces shape.
+create table if not exists public.boot_records (
+  user_id     uuid not null references auth.users on delete cascade,
+  kind        text not null check (kind in ('profile','claim','search','run','opp','app','contact','outreach','answer')),
+  id          text not null,
+  data        jsonb not null,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now(),
+  primary key (user_id, kind, id)
+);
+create index if not exists boot_records_user_kind on public.boot_records (user_id, kind, updated_at desc);
+alter table public.boot_records enable row level security;
+grant select, insert, update, delete on public.boot_records to service_role;
+revoke all on public.boot_records from anon, authenticated;

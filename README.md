@@ -44,6 +44,21 @@ The preview at the top plays at 3× speed. Full one-minute walkthrough with soun
 
 See [docs/PRD.md](docs/PRD.md) for the product spec and [docs/SOURCES.md](docs/SOURCES.md) for which Yale data sources we can use.
 
+## Boot Outreach workspace (`/workspace`)
+
+A free, evidence-first job-search workspace built from [the Boot Outreach PRD](docs/BOOT_OUTREACH_PRD.md). Open http://localhost:3000/workspace (or **🧭 Workspace** in the app sidebar).
+
+- **Discover:** searches official employer job boards (public Greenhouse, Lever and Ashby feeds) for ~30 AI, robotics and software companies, plus any board you add. Each role has one canonical URL, a source record and a last-checked time. You can save searches, dismissed roles stay hidden, and "Re-check if open" re-verifies a posting.
+- **Evidence:** deadline, term, pay, work mode, sponsorship, work authorization, CPT/OPT and language are quoted from the posting with a link and checked date, or shown as "not stated".
+- **Three separate fit answers:** *interest* (your role families, industries, term), *experience* (which requirements your confirmed claims support) and *eligibility* (what the posting says, next to facts you confirmed). It never says "you're eligible".
+- **Claims ledger:** the only source for drafts. Statuses are verified, approximate, unreviewed, needs evidence and omit. Corrections and "never use" phrases apply to every new draft.
+- **Application workspace:** per-role resume version (with a diff), cover letter, and answers to the employer's questions, all built from claims, with version history. Unsupported numbers, placeholders and approximate claims are flagged and must be fixed or acknowledged before approval.
+- **Final review:** a packet preview with a fingerprint. You submit on the employer's site; the app records your approval, the exact packet and any receipt. Nothing is auto-submitted.
+- **Contacts & outreach:** import your LinkedIn **Connections.csv** (LinkedIn's own data export), or add people by hand. Email provenance is labeled (verified / from export / you provided / guessed). Drafts must be approved word for word before you can log them as sent. Nothing is sent by the app.
+- **Answer library, CSV export, calendar (.ics) of firm dates only, JSON export/import, delete-all.**
+
+It costs nothing to run: no AI calls and no paid APIs. Optional integrations are listed in [docs/COSTS.md](docs/COSTS.md). A starter profile drawn from the PRD is in [docs/seed-alwis.json](docs/seed-alwis.json) (Workspace → Your data → Import). Every claim in it starts as *unreviewed*.
+
 ## Why
 
 Yale gives you the network, but nothing helps you use it. LinkedIn tells you who exists. Bulldog Reach tells you **who can actually move your goal forward, what to ask them, and what to say**, using what they posted this week.

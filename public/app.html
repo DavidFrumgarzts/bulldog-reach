@@ -43,6 +43,8 @@
       <span>3. Choose <b>Save to PDF</b>.</span>
       <span>4. Upload the <b>Profile.pdf</b> it downloads here.</span>
     </span></span></div>
+    <div id="li_onb" class="licard"></div>
+    <div class="lior">or upload your profile PDF (adds your full experience to your resume)</div>
     <label class="drop odrop big"><b>💼 Your LinkedIn PDF</b><span id="o_lname">Profile.pdf from LinkedIn</span><input id="o_lfile" type="file" accept=".pdf" onchange="$('#o_lname').textContent=this.files[0]?.name||'Profile.pdf from LinkedIn'" /></label>
     <div class="onav"><button class="linkbtn" onclick="go(-1)">Back</button><span></span><button class="linkbtn" onclick="$('#o_lfile').value='';$('#o_lname').textContent='Profile.pdf from LinkedIn';go(1)">Skip</button><button class="cta ocont" onclick="go(1)">Continue →</button></div>
   </section>
@@ -100,7 +102,9 @@
       <button id="mylistbtn" onclick="openList()">📌 My list <b id="cartcount" class="badge"></b></button>
       <button id="resumebtn" onclick="openResume()">📄 My resume</button>
       <button onclick="openCalendar()">📅 Calendar sync</button>
+      <button onclick="location.href='/workspace'">🧭 Workspace</button>
     </nav>
+    <div id="li_side" class="licard side-li"></div>
     <div class="sidelabel">Chats</div>
     <div id="histlist" class="histlist side-hist"></div>
     <div class="sidefoot">
@@ -181,5 +185,6 @@
 <script src="/cart.js"></script>
 <script src="/resume.js"></script>
 <script src="/app.js"></script>
+<script src="/linkedin.js"></script>
 </body>
 </html>

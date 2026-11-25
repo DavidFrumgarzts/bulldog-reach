@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Boot Outreach — workspace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/styles.css" />
+<link rel="stylesheet" href="/workspace.css" />
+</head>
+<body class="ws">
+<header class="wshead">
+  <a href="/app" class="logo" title="Back to chat">B_</a>
+  <span class="wsbrand">Boot Outreach <small>workspace</small></span>
+  <nav class="wstabs" role="tablist">
+    <button data-tab="discover" role="tab">Discover</button>
+    <button data-tab="pipeline" role="tab">Pipeline</button>
+    <button data-tab="contacts" role="tab">Contacts</button>
+    <button data-tab="answers" role="tab">Answers</button>
+    <button data-tab="profile" role="tab">Profile</button>
+    <button data-tab="data" role="tab">Your data</button>
+  </nav>
+  <span id="who" class="who"></span>
+</header>
+
+<main class="wsmain">
+  <!-- DISCOVER -->
+  <section id="tab-discover" class="tab" hidden>
+    <div class="bar">
+      <input id="d_query" class="inp grow" placeholder="e.g. NYC or Bay Area AI/robotics internships for Summer 2027 — product, GTM, TPM, solutions or ops" />
+      <button class="btn" onclick="parseQuery()">Fill filters</button>
+    </div>
+    <div class="filters">
+      <label>Locations <input id="d_loc" class="inp" placeholder="NYC, Bay Area" /></label>
+      <label>Keywords in title <input id="d_kw" class="inp" placeholder="optional: product, operations" /></label>
+      <label>Level <select id="d_level" class="inp"><option value="internship">Internships</option><option value="early">Internships + early career</option><option value="any">Any</option></select></label>
+      <label>Term <input id="d_term" class="inp" placeholder="Summer 2027" style="width:130px" /></label>
+      <label class="chk"><input type="checkbox" id="d_remote" checked /> Include remote</label>
+      <label class="chk"><input type="checkbox" id="d_fam" /> Only my role families</label>
+    </div>
+    <div class="bar">
+      <button class="btn primary" id="d_run" onclick="runSearch()">Search official job boards</button>
+      <button class="btn" onclick="saveSearch()">Save this search</button>
+      <select id="d_saved" class="inp" onchange="loadSaved(this.value)"><option value="">Saved searches…</option></select>
+      <span class="grow"></span>
+      <select id="d_view" class="inp" onchange="paintDiscover()"><option value="new">New</option><option value="saved">Saved</option><option value="dismissed">Dismissed</option><option value="all">All</option></select>
+    </div>
+    <p class="muted small" id="d_meta">Searches public Greenhouse, Lever and Ashby boards for the companies in Profile → Companies. Free, no keys, official postings only.</p>
+    <div id="d_sources" class="sources"></div>
+    <div id="d_list" class="cards"></div>
+  </section>
+
+  <!-- PIPELINE -->
+  <section id="tab-pipeline" class="tab" hidden>
+    <div class="bar">
+      <select id="p_stage" class="inp" onchange="paintPipeline()"><option value="open">All open work</option></select>
+      <button class="btn" onclick="addManualApp()">+ Add an application by hand</button>
+      <span class="grow"></span>
+      <button class="btn" onclick="download('/api/boot/apps.csv','boot-outreach-applications.csv')">Export CSV</button>
+      <button class="btn" onclick="download('/api/boot/calendar.ics','boot-outreach.ics')">Calendar (.ics)</button>
+    </div>
+    <div id="p_list"></div>
+  </section>
+
+  <!-- CONTACTS -->
+  <section id="tab-contacts" class="tab" hidden>
+    <div class="grid2">
+      <div class="panel">
+        <h3>Import your LinkedIn connections</h3>
+        <p class="muted small">Free and within LinkedIn's rules: it's your own data. On LinkedIn go to <b>Settings → Data privacy → Get a copy of your data</b>, tick <b>Connections</b>, and upload <code>Connections.csv</code> when the email arrives (usually within a day). Emails appear only for connections who allow it.</p>
+        <label class="drop"><input type="file" id="c_csv" accept=".csv" onchange="importConnections(this)" /> Choose Connections.csv</label>
+      </div>
+      <div class="panel">
+        <h3>Add a person</h3>
+        <div class="form" id="c_form">
+          <input class="inp" name="name" placeholder="Full name *" />
+          <input class="inp" name="company" placeholder="Company" />
+          <input class="inp" name="role" placeholder="Role / title" />
+          <input class="inp" name="profile_url" placeholder="Profile URL (LinkedIn, personal site)" />
+          <input class="inp" name="email" placeholder="Email (optional)" />
+          <select class="inp" name="email_status"><option value="user_provided">Email: you have it from them</option><option value="verified">Email: verified (published by them)</option><option value="inferred">Email: guessed — unverified</option></select>
+          <input class="inp" name="shared_context" placeholder="Shared context (how you know them)" />
+          <input class="inp" name="source_url" placeholder="Where you found them (URL)" />
+          <button class="btn primary" onclick="addContact()">Add contact</button>
+        </div>
+      </div>
+    </div>
+    <div class="panel" id="c_apollo"></div>
+    <div class="bar"><input id="c_filter" class="inp grow" placeholder="Filter by name or company" oninput="paintContacts()" /></div>
+    <div id="c_list"></div>
+    <h3 style="margin-top:28px">Outreach log</h3>
+    <div id="o_list"></div>
+  </section>
+
+  <!-- ANSWERS -->
+  <section id="tab-answers" class="tab" hidden>
+    <p class="muted">Approved answers you can reuse. Drafts for new questions pull from here first. Mark time-sensitive answers “reconfirm before reuse”.</p>
+    <div class="panel form">
+      <input id="a_q" class="inp" placeholder="Question (e.g. Why do you want to work in robotics?)" />
+      <textarea id="a_a" class="inp" rows="4" placeholder="Your answer"></textarea>
+      <div class="bar"><input id="a_tags" class="inp grow" placeholder="Tags, comma separated" /><label class="chk"><input type="checkbox" id="a_re" /> Reconfirm before reuse</label><button class="btn primary" onclick="addAnswer()">Save &amp; approve</button></div>
+    </div>
+    <div id="a_list"></div>
+  </section>
+
+  <!-- PROFILE -->
+  <section id="tab-profile" class="tab" hidden>
+    <div class="grid2">
+      <div class="panel form" id="pf_basic">
+        <h3>About you</h3>
+        <input class="inp" name="name" placeholder="Name" />
+        <input class="inp" name="email" placeholder="Email for resumes" />
+        <input class="inp" name="phone" placeholder="Phone" />
+        <input class="inp" name="location" placeholder="Location line for resumes" />
+        <input class="inp" name="links" placeholder="Links (portfolio, LinkedIn)" />
+        <input class="inp" name="school" placeholder="School" />
+        <input class="inp" name="majors" placeholder="Majors" />
+        <input class="inp" name="year_label" placeholder="Year (e.g. sophomore)" />
+        <input class="inp" name="grad" placeholder="Expected graduation (e.g. May 2029)" />
+      </div>
+      <div class="panel form" id="pf_prefs">
+        <h3>Preferences</h3>
+        <div class="lbl">Role families</div><div id="pf_fams" class="chips"></div>
+        <div class="lbl">Industries</div><div class="chips"><label class="chip"><input type="checkbox" name="ind" value="ai" /> AI</label><label class="chip"><input type="checkbox" name="ind" value="robotics" /> Robotics</label></div>
+        <input class="inp" name="locations" placeholder="Locations (comma separated: NYC, Bay Area)" />
+        <label class="chk"><input type="checkbox" name="include_remote" /> Remote is fine</label>
+        <input class="inp" name="term" placeholder="Term (e.g. Summer 2027)" />
+        <div class="row"><label>Start <input class="inp" type="date" name="start_date" /></label><label>End <input class="inp" type="date" name="end_date" /></label></div>
+        <input class="inp" name="days_per_week" placeholder="Days per week available" />
+        <input class="inp" name="comp_min" placeholder="Minimum pay (e.g. $30/hr)" />
+        <div class="lbl">Company stage</div><div class="chips"><label class="chip"><input type="checkbox" name="stage" value="startup" /> Startup</label><label class="chip"><input type="checkbox" name="stage" value="growth" /> Growth</label><label class="chip"><input type="checkbox" name="stage" value="large" /> Large</label></div>
+        <textarea class="inp" name="learning_goals" rows="2" placeholder="What you want to learn"></textarea>
+        <div class="lbl">Ranking priorities (0–3)</div><div id="pf_prio" class="prio"></div>
+      </div>
+    </div>
+    <div class="panel form" id="pf_elig">
+      <h3>Eligibility facts <small class="muted">— saved only when you tick “I confirm”. The app never guesses these.</small></h3>
+      <div id="pf_eligrows"></div>
+      <p class="muted small">Not legal advice. Questions about CPT/OPT go to your school's international office (DSO) and the employer.</p>
+    </div>
+    <div class="grid2">
+      <div class="panel form">
+        <h3>Corrections <small class="muted">— applied to every new draft</small></h3>
+        <textarea id="pf_corr" class="inp" rows="4" placeholder="wrong wording => right wording (one per line)"></textarea>
+        <h3>Never use</h3>
+        <textarea id="pf_excl" class="inp" rows="3" placeholder="One phrase per line (flagged if it appears)"></textarea>
+      </div>
+      <div class="panel form">
+        <h3>Companies to search</h3>
+        <div id="pf_seed" class="seedlist"></div>
+        <div class="lbl">Add a board <small class="muted">(name from the jobs URL, e.g. jobs.ashbyhq.com/<b>openai</b>)</small></div>
+        <div class="row"><select id="pf_bats" class="inp"><option value="greenhouse">Greenhouse</option><option value="lever">Lever</option><option value="ashby">Ashby</option></select><input id="pf_bname" class="inp" placeholder="board name" /><button class="btn" onclick="addBoard()">Test &amp; add</button></div>
+        <div id="pf_boards"></div>
+      </div>
+    </div>
+    <div class="bar sticky"><button class="btn primary" onclick="saveProfile()">Save profile</button><span id="pf_saved" class="muted small"></span></div>
+
+    <div class="panel">
+      <div class="bar"><h3 class="grow">Claims ledger <small class="muted">— the only source for generated resumes, letters and answers</small></h3>
+        <button class="btn" onclick="importResumeClaims()">Import from my resume</button><button class="btn" onclick="editClaim()">+ Add claim</button></div>
+      <p class="muted small">Statuses: <b>verified</b> (used as written) · <b>approximate</b> (used, but flagged until you approve the wording) · <b>unreviewed</b> / <b>needs evidence</b> (never used) · <b>omit</b> (never used).</p>
+      <div id="pf_claims"></div>
+    </div>
+  </section>
+
+  <!-- DATA -->
+  <section id="tab-data" class="tab" hidden>
+    <div class="grid2">
+      <div class="panel">
+        <h3>Export</h3>
+        <p class="muted small">Everything in this workspace plus your main-app profile, resume and list, as JSON.</p>
+        <button class="btn" onclick="download('/api/boot/export','boot-outreach-export.json')">Download my data</button>
+        <h3 style="margin-top:20px">Import</h3>
+        <p class="muted small">A previous export, or a starter file. Eligibility facts are never imported.</p>
+        <label class="drop"><input type="file" accept=".json" onchange="importJSON(this)" /> Choose a .json file</label>
+      </div>
+      <div class="panel danger">
+        <h3>Delete workspace data</h3>
+        <p class="muted small">Permanently deletes your workspace profile, claims, searches, opportunities, applications, contacts, outreach log and answers. This can't be undone. Export first if you want a copy.</p>
+        <input id="del_confirm" class="inp" placeholder="Type DELETE" />
+        <button class="btn dangerbtn" onclick="deleteAll()">Delete permanently</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Costs</h3>
+      <p class="muted small">This workspace makes no paid calls: job search uses free public job-board feeds, and drafts come from your own claims (no AI model). Optional integrations that could ever cost money are off unless you add a key yourself. See <code>docs/COSTS.md</code>.</p>
+      <div id="data_integrations" class="small"></div>
+    </div>
+  </section>
+</main>
+
+<div id="drawer" class="drawer" hidden><div class="drawerin"><button class="x" onclick="closeDrawer()" aria-label="Close">×</button><div id="drawerbody"></div></div></div>
+<div id="toast" class="toast" hidden></div>
+<script src="/workspace.js"></script>
+</body>
+</html>

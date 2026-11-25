@@ -15,7 +15,7 @@ paintAuth = function () {
 
 async function enterApp() {
   try { const { profile } = await call("/api/profile", { method: "GET" }); APP.profile = profile; } catch { APP.profile = null; }
-  loadResume(); loadCart(); loadHistory();
+  loadResume(); loadCart(); loadHistory(); if (window.loadLinkedIn) loadLinkedIn();
   if (!APP.profile?.onboarded) return showOnboarding("linkedin");
   setAbout();
   showShell();

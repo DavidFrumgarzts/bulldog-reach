@@ -314,12 +314,12 @@ function send(res, code, obj) {
   res.writeHead(code, { "Content-Type": "application/json", "Cache-Control": "no-store" });
   res.end(JSON.stringify(obj));
 }
-function readBody(req) {
+function readBody(req, max = 600e3) {
   return new Promise((resolve, reject) => {
     let body = "";
     req.on("data", (c) => {
       body += c;
-      if (body.length > 600e3) { reject(new HttpError(413, "Request too large")); req.destroy(); }
+      if (body.length > max) { reject(new HttpError(413, "Request too large")); req.destroy(); }
     });
     req.on("end", () => { try { resolve(JSON.parse(body || "{}")); } catch { resolve({}); } });
   });
@@ -329,6 +329,9 @@ const clip = (s, n) => String(s || "").slice(0, n);
 // ---------------- cart / resume helpers ----------------
 const { ics } = require("./lib/ics");
 const store = require("./lib/store")({ AUTH, sb, root: __dirname });
+const linkedin = require("./lib/linkedin");
+const records = require("./lib/records")({ AUTH, sb, root: __dirname });
+const bootApi = require("./lib/boot")({ records, store, guard, readBody, send, HttpError });
 const CART_STATUSES = ["saved", "applying", "submitted", "interview", "offer", "dropped"];
 const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || "");
 
@@ -434,7 +437,7 @@ http
     const url = req.url.split("?")[0];
     try {
       if (url === "/api/config" || url === "/api/status") {
-        return send(res, 200, { demo: DEMO, model: MODEL, emailCode: process.env.AUTH_EMAIL_CODE === "1", auth: AUTH, domain: DOMAIN, limits: LIMITS, supabaseUrl: AUTH ? SB_URL : null, supabaseAnonKey: AUTH ? SB_ANON : null });
+        return send(res, 200, { demo: DEMO, model: MODEL, emailCode: process.env.AUTH_EMAIL_CODE === "1", auth: AUTH, domain: DOMAIN, limits: LIMITS, supabaseUrl: AUTH ? SB_URL : null, supabaseAnonKey: AUTH ? SB_ANON : null, linkedin: linkedin.configured });
       }
       if (req.method === "POST" && url === "/api/plan") {
         const user = await guard(req);
@@ -503,6 +506,28 @@ http
           summer_goal: clip(b.summer_goal, 400), people: clip(b.people, 4000), onboarded: !!b.onboarded,
         };
         return send(res, 200, { profile: await store.profileSave(user.id, profile) });
+      }
+
+      // ---------------- Boot Outreach workspace (/workspace) ----------------
+      if (url.startsWith("/api/boot/")) { await bootApi(req, res, url); return; }
+
+      // ---------------- LinkedIn (connected through Composio) ----------------
+      if (url === "/api/linkedin" && req.method === "GET") {
+        const user = await guard(req);
+        return send(res, 200, await linkedin.status(user.id));
+      }
+      if (url === "/api/linkedin/connect" && req.method === "POST") {
+        const user = await guard(req);
+        return send(res, 200, await linkedin.connect(user.id, publicBase(req) + "/linkedin/callback"));
+      }
+      if (url === "/api/linkedin" && req.method === "DELETE") {
+        const user = await guard(req);
+        return send(res, 200, await linkedin.disconnect(user.id));
+      }
+      if (url === "/linkedin/callback" && req.method === "GET") {
+        const q = new URLSearchParams(req.url.split("?")[1] || "");
+        res.writeHead(200, { "Content-Type": "text/html", "Cache-Control": "no-store" });
+        return res.end(linkedin.callbackPage(q.get("status") !== "failed"));
       }
 
       // ---------------- cart ("shopping cart" of opportunities) ----------------
@@ -624,13 +649,13 @@ http
       if (!(e instanceof HttpError)) console.error(e);
       return send(res, e.status && e.status < 600 ? e.status : 500, { error: e.message });
     }
-    const file = path.join(__dirname, "public", url === "/" ? "index.html" : url === "/app" || url === "/auth/confirm" ? "app.html" : url);
+    const file = path.join(__dirname, "public", url === "/" ? "index.html" : url === "/app" || url === "/auth/confirm" ? "app.html" : url === "/workspace" ? "workspace.html" : url);
     if (!file.startsWith(path.join(__dirname, "public")) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
       res.writeHead(404);
       return res.end("not found");
     }
     const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml" };
-    res.writeHead(200, { "Content-Type": types[path.extname(file)] || "application/octet-stream" });
+    res.writeHead(200, { "Content-Type": types[path.extname(file)] || "application/octet-stream", "Cache-Control": "no-cache" });
     fs.createReadStream(file).pipe(res);
   })
   .listen(PORT, () => console.log(`Bulldog Reach on http://localhost:${PORT}  (${DEMO ? "DEMO mode — add ANTHROPIC_API_KEY to .env" : "model " + MODEL} · ${AUTH ? "Yale login ON" : "open mode, no login"})`));

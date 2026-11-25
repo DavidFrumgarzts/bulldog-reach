@@ -198,3 +198,20 @@
 .tip:hover .tipbox,.tip:focus .tipbox,.tip:focus-within .tipbox{display:block}
 .tipbox>b{display:block;margin-bottom:6px}
 .tipbox>span{display:block;margin:4px 0}
+
+/* LinkedIn connect (Composio) */
+.licard{display:flex;align-items:center;gap:12px;margin:14px 0 10px}
+.licard:empty{display:none}
+.licard img,.licard .liav{width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none;background:#0a66c2;display:grid;place-items:center;font-weight:700;color:#fff}
+.licard .litxt{display:flex;flex-direction:column;min-width:0;flex:1}
+.licard .litxt b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.licard .litxt small{opacity:.7;font-size:13px}
+.libtn{display:inline-flex;align-items:center;gap:10px;height:56px;padding:0 24px;border-radius:16px;border:0;background:#0a66c2;color:#fff;font-size:17px;font-weight:600;cursor:pointer}
+.libtn:hover{background:#004182}
+.libtn:disabled{opacity:.6;cursor:wait}
+.libtn svg{width:22px;height:22px;fill:#fff}
+.lior{opacity:.65;font-size:14px;margin:4px 0 10px}
+.side-li{margin:10px 12px 4px;padding:10px;border-radius:14px;background:rgba(255,255,255,.06);gap:10px}
+.side-li img,.side-li .liav{width:32px;height:32px;font-size:13px}
+.side-li .libtn{height:38px;padding:0 14px;font-size:14px;border-radius:11px;width:100%;justify-content:center}
+.side-li .libtn svg{width:16px;height:16px}

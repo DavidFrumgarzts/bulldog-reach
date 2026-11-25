@@ -1,0 +1,34 @@
+{
+  "_about": "Starter workspace for Alwis, taken only from BOOT_OUTREACH_PRD.md section 2. Import it in Workspace → Your data. Every claim comes in as 'unreviewed', so nothing is used in drafts until you add exact titles, dates and wording and mark it verified. Eligibility facts are deliberately absent: confirm them yourself in Profile.",
+  "workspace": {
+    "profile": [
+      {
+        "id": "me",
+        "name": "Alwis Lim",
+        "school": "Yale University",
+        "majors": "Computer Science and Global Affairs",
+        "grad": "May 2029",
+        "preferences": {
+          "role_families": ["product", "gtm", "tpm", "solutions", "ops", "robotics"],
+          "industries": ["ai", "robotics"],
+          "locations": ["NYC", "Bay Area"],
+          "include_remote": true,
+          "term": "Summer 2027",
+          "company_stages": ["startup", "growth"],
+          "learning_goals": "Startup execution, product and customer exposure, go-to-market, operational ownership, credibility from strong teams; path toward founding a robotics/AI startup.",
+          "priorities": { "startup": 3, "product_gtm": 3, "robotics": 3, "brand": 2, "compensation": 1, "location": 2 }
+        }
+      }
+    ],
+    "claim": [
+      { "id": "seed-axis", "section": "experience", "org": "Axis / Codeezy", "title": "Co-founder", "text": "Co-founded Axis/Codeezy and led customer discovery", "status": "unreviewed", "source": "PRD section 2", "skills": ["customer discovery", "founding"], "order": 1 },
+      { "id": "seed-yts", "section": "leadership", "org": "YouthTechSG", "title": "Deputy CEO (formerly Chief of Staff to CEO)", "text": "Built YouthTechSG community and programs from 0 to 1", "status": "unreviewed", "source": "PRD section 2", "skills": ["program building", "operations", "community"], "order": 2 },
+      { "id": "seed-cyn", "section": "leadership", "org": "Canberra Youth Network", "title": "Vice-Chair", "text": "Vice-chair of Canberra Youth Network", "status": "unreviewed", "source": "PRD section 2", "order": 3 },
+      { "id": "seed-cag", "section": "experience", "org": "Changi Airport Group", "title": "", "text": "Operational analytics and a live 3D LiDAR trial at Changi Airport Group", "status": "unreviewed", "source": "PRD section 2", "skills": ["operational analytics", "LiDAR"], "order": 4 },
+      { "id": "seed-govtech", "section": "experience", "org": "GovTech", "title": "", "text": "Built cybersecurity tooling at GovTech", "status": "unreviewed", "source": "PRD section 2", "skills": ["cybersecurity"], "order": 5 },
+      { "id": "seed-sp", "section": "education", "org": "Singapore Polytechnic", "title": "", "text": "Cybersecurity and digital forensics, Singapore Polytechnic", "status": "unreviewed", "source": "PRD section 2", "skills": ["cybersecurity", "digital forensics"], "order": 6 },
+      { "id": "seed-yale", "section": "education", "org": "Yale University", "title": "Computer Science and Global Affairs", "dates": "Expected May 2029", "text": "Computer Science and Global Affairs at Yale, expected graduation May 2029", "status": "unreviewed", "source": "PRD section 2", "order": 0 },
+      { "id": "seed-robotics", "section": "experience", "org": "Yale", "title": "Robotics research", "text": "Robotics research experience at Yale", "status": "unreviewed", "source": "PRD section 2", "skills": ["robotics", "research"], "order": 7 }
+    ]
+  }
+}
