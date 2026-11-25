@@ -232,7 +232,7 @@ function artifactBlock(app, key, label, a) {
   const flags = a.flags || [];
   const claims = (a.claim_ids || []).map((id) => W.state.claims.find((c) => c.id === id)).filter(Boolean);
   return `<div class="art" data-key="${esc(key)}">
-    <div class="bar"><b class="grow">${esc(label)}</b>${a.approved_at ? `<span class="pill g">Approved ${fmtDate(a.approved_at)}</span>` : `<span class="pill y">Not approved</span>`}${a.reused ? `<span class="pill b">Reused answer</span>` : ""}</div>
+    <div class="bar"><b class="grow">${esc(label)}</b>${a.approved_at ? `<span class="pill g">Approved ${fmtDate(a.approved_at)}</span>` : `<span class="pill y">Not approved</span>`}${a.reused ? `<span class="pill b">Reused answer</span>` : ""}${a.written_by ? `<span class="pill b" title="Reworded by AI from your claims only; flags re-checked">AI: ${esc(a.written_by)}</span>` : ""}</div>
     ${a.question ? `<div class="small muted">Q: ${esc(a.question)}</div>` : ""}
     <textarea class="inp" id="t_${esc(key)}">${esc(text)}</textarea>
     <div class="small muted">Built from: ${claims.length ? claims.map((c) => `<span class="st ${c.status}">${c.status}</span> ${esc((c.preferred_wording || c.text).slice(0, 60))}`).join(" · ") : "no claims"}</div>
@@ -243,6 +243,7 @@ function artifactBlock(app, key, label, a) {
       <button class="btn sm" onclick="saveArtifact('${app.id}','${esc(key)}')">Save edits</button>
       <button class="btn sm primary" onclick="approveArtifact('${app.id}','${esc(key)}')">Approve</button>
       ${key.startsWith("q:") && a.approved_at ? `<button class="btn sm" onclick="saveToLibrary('${app.id}','${esc(key.slice(2))}')">Save to answer library</button>` : ""}
+      ${key !== "resume" && W.state.integrations.ai ? `<button class="btn sm" title="Rewords this draft with ${esc(W.state.integrations.ai_model)} using only your claims. Paid per use (about $0.001)." onclick="aiRewrite('${app.id}','${esc(key)}')">✨ Rewrite with AI</button>` : ""}
       ${key !== "resume" ? `<button class="btn sm" onclick="deleteArtifact('${app.id}','${esc(key)}')">Remove</button>` : `<button class="btn sm" onclick="draft('${app.id}','resume')">Regenerate</button>`}
     </div></div>`;
 }
@@ -291,6 +292,12 @@ async function saveApp(id) {
   } catch (e) { toast(e.message); }
 }
 async function draft(id, kind) { try { const { app } = await api(`/apps/${id}/draft`, { method: "POST", body: { kind } }); refreshApp(app); } catch (e) { toast(e.message); } }
+async function aiRewrite(id, key, btn) {
+  const a = W.apps.find((x) => x.id === id);
+  const body = key === "cover_letter" ? { kind: "cover_letter", ai: true } : (() => { const q = a.materials.questions.find((x) => "q:" + x.id === key); return { kind: "question", question: q.question, question_id: q.id, ai: true }; })();
+  toast("Rewriting with AI…", 8000);
+  try { const { app } = await api(`/apps/${id}/draft`, { method: "POST", body }); toast("Rewritten. Check the flags, then approve."); refreshApp(app); } catch (e) { toast(e.message, 6000); }
+}
 async function draftQuestion(id) { const q = $("#ap_q").value.trim(); if (!q) return toast("Paste the question first"); try { const { app } = await api(`/apps/${id}/draft`, { method: "POST", body: { kind: "question", question: q } }); refreshApp(app); } catch (e) { toast(e.message); } }
 async function saveArtifact(id, key) { try { const { app } = await api(`/apps/${id}/artifact`, { method: "PUT", body: { key, text: $(`[id="t_${key}"]`).value } }); toast("Saved. Flags re-checked; approve again when ready."); refreshApp(app); } catch (e) { toast(e.message); } }
 async function approveArtifact(id, key) {
@@ -384,13 +391,24 @@ function openOutreach(id) {
       <textarea class="inp" id="out_text" ${o.sent_at ? "readonly" : ""}>${esc(o.text)}</textarea>
       ${o.channel === "linkedin" ? `<div class="small muted"><span id="out_len">${o.text.length}</span>/300 characters (LinkedIn connection-note limit)</div>` : ""}
       ${(o.flags || []).length ? `<div class="flags">${o.flags.map((f) => `<label><input type="checkbox" data-flag="${esc(f.id)}" ${(o.acknowledged || []).includes(f.id) ? "checked" : ""}/> ${esc(f.message)}</label>`).join("")}</div>` : ""}
-      ${o.sent_at ? `<div class="note g">Sent by you on ${fmtDate(o.sent_at)}. Exact text recorded.</div>` : `<div class="bar"><button class="btn sm" onclick="saveOutreach('${o.id}')">Save edits</button><button class="btn sm primary" onclick="approveOutreach('${o.id}')">Approve this exact text</button></div>`}
+      ${o.written_by ? `<div class="small muted">Reworded by ${esc(o.written_by)} from your claims only.</div>` : ""}
+    ${o.sent_at ? `<div class="note g">Sent by you on ${fmtDate(o.sent_at)}. Exact text recorded.</div>` : `<div class="bar"><button class="btn sm" onclick="saveOutreach('${o.id}')">Save edits</button>${W.state.integrations.ai ? `<button class="btn sm" onclick="aiOutreach('${o.id}')">✨ Rewrite with AI</button>` : ""}<button class="btn sm primary" onclick="approveOutreach('${o.id}')">Approve this exact text</button></div>`}
     </div>
     ${o.status === "approved" && !o.sent_at ? `<div class="note">Approved. Send it yourself, then log it:<div class="bar"><button class="btn sm" onclick="navigator.clipboard.writeText(${esc(JSON.stringify(o.approved_text))});toast('Copied')">Copy text</button>${sendLink ? `<a class="btn sm" href="${esc(sendLink.startsWith("mailto:") ? sendLink : safeUrl(sendLink))}" target="_blank" rel="noopener">${o.channel === "email" ? "Open in email app" : "Open their profile"} ↗</a>` : ""}<button class="btn sm primary" onclick="markSent('${o.id}')">I sent it</button></div></div>` : ""}
     ${o.sent_at ? `<div class="bar">${["replied", "meeting", "referred", "no_reply", "opted_out"].map((s) => `<button class="btn sm" onclick="outStatus('${o.id}','${s}')">${s.replace("_", " ")}</button>`).join("")}</div>` : ""}
     <div class="hist">${(o.history || []).map((h) => `<div>${esc(new Date(h.at).toLocaleString())} — ${esc(h.type)}${h.to ? " → " + esc(h.to) : ""}</div>`).join("")}</div>
     <div class="bar"><button class="btn sm" onclick="delOutreach('${o.id}')">Delete</button></div>`);
   const ta = $("#out_text"); if (ta && $("#out_len")) ta.oninput = () => ($("#out_len").textContent = ta.value.length);
+}
+async function aiOutreach(id) {
+  const o = W.outreach.find((x) => x.id === id);
+  toast("Rewriting with AI…", 8000);
+  try {
+    const { outreach } = await api("/outreach/draft", { method: "POST", body: { contact_id: o.contact_id, app_id: o.app_id, channel: o.channel, ai: true } });
+    await api(`/outreach/${id}`, { method: "DELETE" });
+    W.outreach = [outreach, ...W.outreach.filter((x) => x.id !== id)];
+    openOutreach(outreach.id); toast("Rewritten. Check it, then approve.");
+  } catch (e) { toast(e.message, 6000); }
 }
 async function updOut(o) { const i = W.outreach.findIndex((x) => x.id === o.id); W.outreach[i] = o; openOutreach(o.id); if (W.tab === "contacts") paintContacts(); }
 async function saveOutreach(id) { try { const { outreach } = await api(`/outreach/${id}`, { method: "PUT", body: { text: $("#out_text").value } }); toast("Saved"); updOut(outreach); } catch (e) { toast(e.message); } }
@@ -505,7 +523,7 @@ async function importResumeClaims() { try { const r = await api("/claims/import-
 // ---------- data ----------
 function paintData() {
   const i = W.state.integrations;
-  $("#data_integrations").innerHTML = `<div>Job boards (Greenhouse, Lever, Ashby): <b>on · free</b></div><div>Apollo people search: <b>${i.apollo ? "on (your key)" : "off"}</b></div><div>Linq mobile alerts: <b>off</b> (paid provider, not set up)</div><div>Ranking by meaning: <b>local model, free</b> (${esc(i.meaning_model)})</div><div>Anthropic (paid) in this workspace: <b>never used</b>. Drafts come from your claims.</div><div>Main chat AI: <b>${i.ai ? "on (your key, paid per use)" : "off"}</b></div>`;
+  $("#data_integrations").innerHTML = `<div>Job boards (Greenhouse, Lever, Ashby): <b>on · free</b></div><div>Apollo people search: <b>${i.apollo ? "on (your key)" : "off"}</b></div><div>Linq mobile alerts: <b>off</b> (paid provider, not set up)</div><div>Ranking by meaning: <b>local model, free</b> (${esc(i.meaning_model)})</div><div>AI rewrites in this workspace: <b>${i.ai ? `on · ${esc(i.ai_model)} · paid per use, only when you click ✨` : "off (no Anthropic key)"}</b>. Drafts always start from your claims.</div><div>Main chat AI: <b>${i.ai ? "on (your key, paid per use)" : "off"}</b></div>`;
 }
 async function importJSON(input) {
   const f = input.files[0]; if (!f) return;

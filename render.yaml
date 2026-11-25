@@ -11,8 +11,10 @@ services:
         value: "22"
       - key: ANTHROPIC_API_KEY
         sync: false
-      - key: CLAUDE_MODEL
-        value: claude-opus-5-5
+      - key: CLAUDE_MODEL_SEARCH
+        value: claude-sonnet-5-5
+      - key: CLAUDE_MODEL_FAST
+        value: claude-haiku-5-5
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY

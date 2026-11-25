@@ -16,7 +16,10 @@ if (fs.existsSync(envPath)) {
 const PORT = process.env.PORT || 3000;
 const Anthropic = require("@anthropic-ai/sdk");
 const API_KEY = process.env.ANTHROPIC_API_KEY || "";
-const MODEL = process.env.CLAUDE_MODEL || "claude-opus-5-5";
+// Two models: Sonnet for anything that needs live web search, Haiku (much cheaper) for reading and writing.
+const MODEL_SEARCH = process.env.CLAUDE_MODEL_SEARCH || "claude-sonnet-5-5"; // opportunity deck, game plan, list research
+const MODEL_FAST = process.env.CLAUDE_MODEL_FAST || "claude-haiku-5-5"; // resume reading, tailoring, drafts
+const MODEL = MODEL_SEARCH; // shown in logs / config
 const EFFORT = process.env.REACH_EFFORT || "low"; // low | medium | high — higher is more thorough and slower
 // AI features (chat deck, game plan, resume reading, tailoring, list research) call the paid Anthropic API.
 // Without a key they are OFF and say so. Sample data is shown only if you opt in with DEMO_MODE=1, and it is fake.
@@ -24,8 +27,8 @@ const AI = !!API_KEY && process.env.DEMO_MODE !== "1";
 const DEMO = !AI && process.env.DEMO_MODE === "1";
 const AI_OFF = "AI features are off: they need an Anthropic API key, which is paid per use. Add ANTHROPIC_API_KEY to .env to turn them on. The Workspace (/workspace) works without it.";
 const claude = AI ? new Anthropic({ apiKey: API_KEY, maxRetries: 1 }) : null;
-// If a model declines a request, the API can re-run it on a fallback model in the same call (these models only).
-const FALLBACKS = /^claude-(fable-5-[12]|opus-5|sonnet-5-5)/.test(MODEL);
+// If a model declines a request, the API can re-run it on a fallback model in the same call (these models only; not Haiku).
+const hasFallbacks = (m) => /^claude-(fable-5-[12]|opus-5|sonnet-5-5)/.test(m);
 const today = () => new Date().toISOString().slice(0, 10);
 
 // Tone for everything the student reads. It governs wording only: facts still have to come from what was found.
@@ -143,16 +146,16 @@ const parseJSON = (s) => {
 };
 
 // One model request. Returns the final answer text and how many web searches ran.
-async function ask(system, user, { tools, ms }) {
+async function ask(system, user, { tools, ms, model = MODEL_SEARCH }) {
   const messages = [{ role: "user", content: user }];
   const t0 = Date.now();
   let searches = 0;
   for (let turn = 0; ; turn++) {
     const res = await claude.beta.messages.create({
-      model: MODEL,
+      model,
       max_tokens: 16000,
       output_config: { effort: EFFORT },
-      ...(FALLBACKS ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" } : {}),
+      ...(hasFallbacks(model) ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" } : {}),
       system: `${system}\n\n${VOICE}`,
       messages,
       ...(tools ? { tools } : {}),
@@ -171,8 +174,8 @@ async function ask(system, user, { tools, ms }) {
       if (c.type === "text") text.push(c.text);
       else if (c.type === "server_tool_use" || /tool_result$/.test(c.type)) text = [];
     }
-    console.log(`[model] ${((Date.now() - t0) / 1000).toFixed(1)}s · ${searches} searches · ${tools ? "search" : "plain"}`);
-    return { text: text.join(""), searches, model: res.model || MODEL };
+    console.log(`[model] ${res.model || model} · ${((Date.now() - t0) / 1000).toFixed(1)}s · ${searches} searches · ${tools ? "search" : "plain"}`);
+    return { text: text.join(""), searches, model: res.model || model };
   }
 }
 
@@ -197,10 +200,14 @@ async function claudeJSON(system, user, searchHint) {
   }
 }
 
-// Plain JSON call, no search (resume parsing / tailoring work only on what the student gave us).
+// Plain JSON call, no search, on the cheap model (resume parsing / tailoring work only on what the student gave us).
 async function claudePlain(system, user, ms = 120000) {
-  const out = await ask(`${system}\n\nToday is ${today()}. Output the JSON object only.`, user, { ms });
+  const out = await ask(`${system}\n\nToday is ${today()}. Output the JSON object only.`, user, { ms, model: MODEL_FAST });
   return parseJSON(out.text);
+}
+// Plain text on the cheap model (Workspace drafts).
+async function claudeText(system, user, ms = 90000) {
+  return (await ask(`${system}\n\nToday is ${today()}.`, user, { ms, model: MODEL_FAST })).text.trim();
 }
 
 function planPrompt({ goal, about, profiles, liked }) {
@@ -256,6 +263,7 @@ const LIMITS = {
   detail: +process.env.DAILY_DETAIL_LIMIT || 40, // opportunity research when added to cart
   tailor: +process.env.DAILY_TAILOR_LIMIT || 20,
   parse: +process.env.DAILY_PARSE_LIMIT || 6,
+  draft: +process.env.DAILY_DRAFT_LIMIT || 40, // Workspace AI rewrites (Haiku)
 };
 const MONTHLY_CAP = +process.env.MONTHLY_CALL_CAP || 3000; // total model calls across all users per month
 const STATUSES = ["todo", "sent", "replied", "meeting", "referred", "no_reply"];
@@ -336,7 +344,7 @@ const store = require("./lib/store")({ AUTH, sb, root: __dirname });
 const linkedin = require("./lib/linkedin");
 const records = require("./lib/records")({ AUTH, sb, root: __dirname });
 require("./lib/semantic").warm(); // free local meaning model; loads in the background
-const bootApi = require("./lib/boot")({ records, store, guard, readBody, send, HttpError });
+const bootApi = require("./lib/boot")({ records, store, guard, readBody, send, HttpError, ai: AI ? { write: claudeText, bump, model: MODEL_FAST } : null, AI_OFF });
 const CART_STATUSES = ["saved", "applying", "submitted", "interview", "offer", "dropped"];
 const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || "");
 
@@ -443,7 +451,7 @@ http
     const url = req.url.split("?")[0];
     try {
       if (url === "/api/config" || url === "/api/status") {
-        return send(res, 200, { ai: AI, demo: DEMO, model: MODEL, emailCode: process.env.AUTH_EMAIL_CODE === "1", auth: AUTH, domain: DOMAIN, limits: LIMITS, supabaseUrl: AUTH ? SB_URL : null, supabaseAnonKey: AUTH ? SB_ANON : null, linkedin: linkedin.configured });
+        return send(res, 200, { ai: AI, demo: DEMO, model: MODEL, models: { search: MODEL_SEARCH, fast: MODEL_FAST }, emailCode: process.env.AUTH_EMAIL_CODE === "1", auth: AUTH, domain: DOMAIN, limits: LIMITS, supabaseUrl: AUTH ? SB_URL : null, supabaseAnonKey: AUTH ? SB_ANON : null, linkedin: linkedin.configured });
       }
       if (req.method === "POST" && url === "/api/plan") {
         const user = await guard(req);
@@ -668,4 +676,4 @@ http
     res.writeHead(200, { "Content-Type": types[path.extname(file)] || "application/octet-stream", "Cache-Control": "no-cache" });
     fs.createReadStream(file).pipe(res);
   })
-  .listen(PORT, () => console.log(`Bulldog Reach on http://localhost:${PORT}  (${AI ? "AI on · model " + MODEL : DEMO ? "DEMO_MODE: fake sample data" : "AI off — no ANTHROPIC_API_KEY (workspace is free)"} · ${AUTH ? "Yale login ON" : "open mode, no login"})`));
+  .listen(PORT, () => console.log(`Bulldog Reach on http://localhost:${PORT}  (${AI ? `AI on · search: ${MODEL_SEARCH} · reading/writing: ${MODEL_FAST}` : DEMO ? "DEMO_MODE: fake sample data" : "AI off — no ANTHROPIC_API_KEY (workspace is free)"} · ${AUTH ? "Yale login ON" : "open mode, no login"})`));

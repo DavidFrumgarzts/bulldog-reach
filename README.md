@@ -65,7 +65,7 @@ Yale gives you the network, but nothing helps you use it. LinkedIn tells you who
 
 ## How it works
 
-- **Claude (`claude-opus-5-5` by default)** through the Anthropic **Messages API** with the server-side `web_search` tool, capped at 6 searches per request. Set `CLAUDE_MODEL` and `REACH_EFFORT` in `.env` to trade speed against thoroughness. The app was first built on Grok at the hackathon; Claude has no X search, so hooks now come from the public web.
+- **Claude through the Anthropic Messages API**, two models: **Sonnet 5.5** for features that use the server-side `web_search` tool (capped at 6 searches per request): the opportunity deck, game plan and list research. **Haiku 5.5** (about 20× cheaper) handles resume reading, tailoring and Workspace AI rewrites. Change them with `CLAUDE_MODEL_SEARCH` / `CLAUDE_MODEL_FAST` in `.env`; `REACH_EFFORT` trades speed against thoroughness. The app was first built on Grok at the hackathon; Claude has no X search, so hooks now come from the public web.
 - `POST /api/opportunities`: goal → 8 real opportunities, each with a URL, deadline, Yale connection, and fit score.
 - `POST /api/plan`: goal + your picks (+ optional LinkedIn profiles you paste in) → north star, steps, ranked people, messages, and follow-up timing.
 - If live search fails, the server falls back to a plain Claude call. If the whole request fails, the page shows your last good plan instead.
